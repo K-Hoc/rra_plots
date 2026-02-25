@@ -51,37 +51,6 @@ python one_fold_wrapper.py -m CNB -c ../1_dataRaw/compl_cleaned.csv -o "$CO_DIR"
 python one_fold_wrapper.py -m CNL -c ../1_dataRaw/compl_cleaned.csv -o "$CO_DIR"
 python one_fold_wrapper.py -m CNXL -c ../1_dataRaw/compl_cleaned.csv -o "$CO_DIR"
 
-## Define scripts with custom arguments
-## Groundcover
-#python one_fold_wrapper.py -m B0 -c OG_data/paths_and_labels.csv -o "$GC_DIR" -g True
-#python one_fold_wrapper.py -m B2 -c OG_data/paths_and_labels.csv -o "$GC_DIR" -g True
-#python one_fold_wrapper.py -m B4 -c OG_data/paths_and_labels.csv -o "$GC_DIR" -g True
-#python one_fold_wrapper.py -m B5 -c OG_data/paths_and_labels.csv -o "$GC_DIR" -g True
-#
-#python one_fold_wrapper.py -m XCEPTION -c OG_data/paths_and_labels.csv -o "$GC_DIR" -g True
-#
-#python one_fold_wrapper.py -m CNT -c OG_data/paths_and_labels.csv -o "$GC_DIR" -g True
-#python one_fold_wrapper.py -m CNS -c OG_data/paths_and_labels.csv -o "$GC_DIR" -g True
-#python one_fold_wrapper.py -m CNB -c OG_data/paths_and_labels.csv -o "$GC_DIR" -g True
-#python one_fold_wrapper.py -m CNL -c OG_data/paths_and_labels.csv -o "$GC_DIR" -g True
-#python one_fold_wrapper.py -m CNXL -c OG_data/paths_and_labels.csv -o "$GC_DIR" -g True
-#
-## echo "FINISHED groundcover training"
-#echo "Running COMPLEXITY training..."
-#
-## Complexity
-#python one_fold_wrapper.py -m B0 -c OG_data/compl_cleaned.csv -o "$CO_DIR"
-#python one_fold_wrapper.py -m B2 -c OG_data/compl_cleaned.csv -o "$CO_DIR"
-#python one_fold_wrapper.py -m B4 -c OG_data/compl_cleaned.csv -o "$CO_DIR"
-#python one_fold_wrapper.py -m B5 -c OG_data/compl_cleaned.csv -o "$CO_DIR"
-#
-#python one_fold_wrapper.py -m XCEPTION -c OG_data/compl_cleaned.csv -o "$CO_DIR"
-#
-#python one_fold_wrapper.py -m CNT -c OG_data/compl_cleaned.csv -o "$CO_DIR"
-#python one_fold_wrapper.py -m CNS -c OG_data/compl_cleaned.csv -o "$CO_DIR"
-#python one_fold_wrapper.py -m CNB -c OG_data/compl_cleaned.csv -o "$CO_DIR"
-#python one_fold_wrapper.py -m CNL -c OG_data/compl_cleaned.csv -o "$CO_DIR"
-#python one_fold_wrapper.py -m CNXL -c OG_data/compl_cleaned.csv -o "$CO_DIR"
 
 echo "FINISHED complexity training"
 echo "ALL DONE"
