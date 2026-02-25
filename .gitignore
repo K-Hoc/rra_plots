@@ -1,0 +1,25 @@
+$ cat .gitignore
+*.csv
+*.docx
+*.pyc
+test_images
+
+# Ignore some directorys (chace, tmps, big output directory)
+__pychache__/
+output/
+tmp/
+
+# Ignores from R subdirectory
+R/old_code/
+R/.Rproj.user/
+R/.RData
+R/.Rhistory
+R/reorg_full.txt
+R/*.html
+R/images/
+R/data_franconia/
+
+# non relevant notebooks
+notebooks/Plotting_OOS_pred_gt.ipynb
+notebooks/Visualizing_activations.ipynb
+.Rproj.user

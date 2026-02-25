@@ -1,0 +1,684 @@
+---
+title: "rra - Visualisierung history files"
+output:
+  html_document:
+    df_print: paged
+  html_notebook: default
+  pdf_document: default
+---
+
+# Set working directory and load files
+
+First set the working directory. Then load all the .csv files into data frames.
+
+```{r}
+if (.Platform$OS.type == "windows") {
+  strWDpath <- "E:/Paper_1/2_work"
+} else {
+  strWDpath <- "/home/khochholzer/NAS/Paper_1/2_work"
+}
+strWDpath <- normalizePath(path = strWDpath, winslash = "/")
+
+# working directory only applies during this code chunk!
+source("support_functions.R")
+
+### Complexity ###
+# ConvNext
+l_cphist_cnB <- read.csv(file.path(get_newest_directory("../output/complexity/convnext_base"), "history.csv"), sep = ",", dec = ".")
+l_cphist_cnL <- read.csv(file.path(get_newest_directory("../output/complexity/convnext_large"), "history.csv"), sep = ",", dec = ".")
+l_cphist_cnS <- read.csv(file.path(get_newest_directory("../output/complexity/convnext_small"), "history.csv"), sep = ",", dec = ".")
+l_cphist_cnT <- read.csv(file.path(get_newest_directory("../output/complexity/convnext_tiny"), "history.csv"), sep = ",", dec = ".")
+l_cphist_cnXL <- read.csv(file.path(get_newest_directory("../output/complexity/convnext_xlarge"), "history.csv"), sep = ",", dec = ".")
+
+# EfficientNet
+l_cphist_B0 <- read.csv(file.path(get_newest_directory("../output/complexity/efficientnetb0"), "history.csv"), sep = ",", dec = ".")
+l_cphist_B2 <- read.csv(file.path(get_newest_directory("../output/complexity/efficientnetb2"), "history.csv"), sep = ",", dec = ".")
+l_cphist_B4 <- read.csv(file.path(get_newest_directory("../output/complexity/efficientnetb4"), "history.csv"), sep = ",", dec = ".")
+l_cphist_B5 <- read.csv(file.path(get_newest_directory("../output/complexity/efficientnetb5"), "history.csv"), sep = ",", dec = ".")
+# Xception
+l_cphist_XC <- read.csv(file.path(get_newest_directory("../output/complexity/xception"), "history.csv"), sep = ",", dec = ".")
+
+# Groundcover
+l_gchist_cnB <- read.csv(file.path(get_newest_directory("../output/groundcover/convnext_base"), "history.csv"), sep = ",", dec = ".")
+l_gchist_cnL <- read.csv(file.path(get_newest_directory("../output/groundcover/convnext_large"), "history.csv"), sep = ",", dec = ".")
+l_gchist_cnS <- read.csv(file.path(get_newest_directory("../output/groundcover/convnext_small"), "history.csv"), sep = ",", dec = ".")
+l_gchist_cnT <- read.csv(file.path(get_newest_directory("../output/groundcover/convnext_tiny"), "history.csv"), sep = ",", dec = ".")
+l_gchist_cnXL <- read.csv(file.path(get_newest_directory("../output/groundcover/convnext_xlarge"), "history.csv"), sep = ",", dec = ".")
+
+l_gchist_B0 <- read.csv(file.path(get_newest_directory("../output/groundcover/efficientnetb0"), "history.csv"), sep = ",", dec = ".")
+l_gchist_B2 <- read.csv(file.path(get_newest_directory("../output/groundcover/efficientnetb2"), "history.csv"), sep = ",", dec = ".")
+l_gchist_B4 <- read.csv(file.path(get_newest_directory("../output/groundcover/efficientnetb4"), "history.csv"), sep = ",", dec = ".")
+l_gchist_B5 <- read.csv(file.path(get_newest_directory("../output/groundcover/efficientnetb5"), "history.csv"), sep = ",", dec = ".")
+l_gchist_XC <- read.csv(file.path(get_newest_directory("../output/groundcover/xception"), "history.csv"), sep = ",", dec = ".")
+```
+
+# Plot graphs stored in history files
+
+Then go on to plot all the graphs in the history file per metric. For this load ggplot and ggarrange.
+
+```{r}
+library(ggpubr)
+library(tidyverse)
+library(flextable)
+```
+
+Function to plot all training and validation metrics per model
+
+```{r}
+f_plotMetrics <- function(p_dfCompl, p_dfGC) {
+  l_col <- c("Training" = "lightblue", "Validation" = "orange")
+  
+  r_plot <- ggarrange(
+    ggarrange(
+      ggplot(p_dfCompl, aes(x = seq(from = 1, to = nrow(l_dfCP), by = 1), y = loss)) + geom_point() + geom_line() +
+       labs(x = "epoch", title = "complexity") + theme_bw(),
+      
+      ggplot(p_dfCompl, aes(x = seq(from = 1, to = nrow(l_dfCP), by = 1))) +
+       geom_line(aes(y = kullback_leibler_divergence, color = "Training"))  +
+       geom_line(aes(y = val_kullback_leibler_divergence, color = "Validation")) +
+       labs(x = "epoch", color = "Legend:") +
+       scale_color_manual(values = l_col) + theme_bw(),
+     
+      ggplot(p_dfCompl, aes(x = seq(from = 1, to = nrow(l_dfCP), by = 1))) +
+        geom_line(aes(y = mean_relative_error, color = "Training")) +
+        geom_line(aes(y = val_mean_relative_error, color = "Validation")) +
+        labs(x = "epoch", color = "Legend:") +
+        scale_color_manual(values = l_col) + theme_bw(),
+      
+      ggplot(p_dfCompl, aes(x = seq(from = 1, to = nrow(l_dfCP), by = 1))) +
+        geom_line(aes(y = mean_squared_error, color = "Training")) +
+        geom_line(aes(y = val_mean_squared_error, color = "Validation")) +
+        labs(x = "epoch", color = "Legend:") +
+        scale_color_manual(values = l_col) + theme_bw(),
+      
+      ggplot(p_dfCompl, aes(x = seq(from = 1, to = nrow(l_dfCP), by = 1))) +
+        geom_line(aes(y = accuracy, color = "Training")) +
+        geom_line(aes(y = val_accuracy, color = "Validation")) +
+        labs(x = "epoch", color = "Legend:") +
+        scale_color_manual(values = l_col) + theme_bw(),
+      
+      nrow = 3, ncol = 2, common.legend = TRUE, legend = "bottom"
+    ),
+    
+    ggarrange(
+      ggplot(p_dfGC, aes(x = seq(from = 1, to = nrow(p_dfGC), by = 1), y = loss)) + geom_point() + geom_line() +
+        labs(x = "epoch", title = "groundcover") + theme_bw(),
+      
+      ggplot(p_dfGC, aes(x = seq(from = 1, to = nrow(p_dfGC), by = 1))) +
+        geom_line(aes(y = kullback_leibler_divergence, color = "Training"))  +
+        geom_line(aes(y = val_kullback_leibler_divergence, color = "Validation")) +
+        labs(x = "epoch", color = "Legend:") +
+        scale_color_manual(values = l_col) + theme_bw(),
+      
+      ggplot(p_dfGC, aes(x = seq(from = 1, to = nrow(p_dfGC), by = 1))) +
+        geom_line(aes(y = mean_relative_error, color = "Training")) +
+        geom_line(aes(y = val_mean_relative_error, color = "Validation")) +
+        labs(x = "epoch", color = "Legend:") +
+        scale_color_manual(values = l_col) + theme_bw(),
+      
+      ggplot(p_dfGC, aes(x = seq(from = 1, to = nrow(p_dfGC), by = 1))) +
+        geom_line(aes(y = mean_squared_error, color = "Training")) +
+        geom_line(aes(y = val_mean_squared_error, color = "Validation")) +
+        labs(x = "epoch", color = "Legend:") +
+        scale_color_manual(values = l_col) + theme_bw(),
+      
+      ggplot(p_dfGC, aes(x = seq(from = 1, to = nrow(p_dfGC), by = 1))) +
+        geom_line(aes(y = accuracy, color = "Training")) +
+        geom_line(aes(y = val_accuracy, color = "Validation")) +
+        labs(x = "epoch", color = "Legend:") +
+        scale_color_manual(values = l_col) + theme_bw(),
+      
+      nrow = 3, ncol = 2, common.legend = TRUE, legend = "bottom"
+    )
+  )
+  return(r_plot)
+}
+```
+
+## EfficientNet - models
+
+First for EfficientNet - models
+
+### B0
+
+```{r}
+l_dfCP <- l_cphist_B0
+l_dfGC <- l_gchist_B0
+
+f_plotMetrics(l_cphist_B0, l_gchist_B0)
+
+l_dfCP %>% slice(n())
+l_dfGC %>% slice(n())
+```
+
+B0 the training and validation runs do not look good, so this model will be excluded in the next steps.
+
+### B2
+
+```{r}
+l_dfCP <- l_cphist_B2
+l_dfGC <- l_gchist_B2
+
+f_plotMetrics(l_cphist_B2, l_gchist_B2)
+```
+
+B2 training and validation runs look better than the B0 ones. The complexity graphs are a bit more "unstable" than the groundcover ones.
+
+### B4
+
+```{r}
+l_dfCP <- l_cphist_B4
+l_dfGC <- l_gchist_B4
+
+f_plotMetrics(l_cphist_B4, l_gchist_B4)
+```
+
+The training and validation graphs do not look good, B4 will also be excluded from the next steps.
+
+### B5
+
+```{r}
+l_dfCP <- l_cphist_B5
+l_dfGC <- l_gchist_B5
+
+f_plotMetrics(l_cphist_B5, l_gchist_B5)
+```
+
+The B5 graphs for complexity look realy good! Groundcover graphs are still okay-isch.
+
+## Xception
+
+Now for the **Xception** model:
+
+```{r}
+l_dfCP <- l_cphist_XC
+l_dfGC <- l_gchist_XC
+
+f_plotMetrics(l_cphist_XC, l_gchist_XC)
+
+l_col <- c("Training" = "lightblue", "Validation" = "orange")
+ggplot(l_dfCP, aes(x = seq(from = 1, to = nrow(l_dfCP), by = 1))) +
+  geom_line(aes(y = loss, color = "Training")) +
+  geom_line(aes(y = val_loss, color = "Validation")) +
+  labs(x = "epoch", color = "Legend") +
+  scale_color_manual(values = l_col) + theme_bw()
+
+ggplot(l_dfGC, aes(x = seq(from = 1, to = nrow(l_dfGC), by = 1))) +
+  geom_line(aes(y = loss, color = "Training")) +
+  geom_line(aes(y = val_loss, color = "Validation")) +
+  labs(x = "epoch", color = "Legend") +
+  scale_color_manual(values = l_col) + theme_bw()
+```
+
+The xception model results look good for complexity and groundcover.
+
+## ConvNext - models
+
+Lastly the new ConvNext models:
+
+### Tiny
+
+```{r}
+l_dfCP <- l_cphist_cnT
+l_dfGC <- l_gchist_cnT
+
+f_plotMetrics(l_cphist_cnT, l_gchist_cnT)
+```
+
+while the loss function is looking good, the validation graphs do not look as good.
+
+### Small
+
+```{r}
+l_dfCP <- l_cphist_cnS
+l_dfGC <- l_gchist_cnS
+
+f_plotMetrics(l_cphist_cnS, l_gchist_cnS)
+```
+
+The graphs from ConvNextSmall look good.
+
+### Base
+
+```{r}
+l_dfCP <- l_cphist_cnB
+l_dfGC <- l_gchist_cnB
+
+f_plotMetrics(l_cphist_cnB, l_gchist_cnB)
+```
+
+The graphs from ConvNextBase also look good.
+
+### Large
+
+```{r}
+l_dfCP <- l_cphist_cnL
+l_dfGC <- l_gchist_cnL
+
+f_plotMetrics(l_cphist_cnL, l_gchist_cnL)
+```
+
+While the graphs for complexity look very good with ConvNextLarge, the groundcover ones do not look as good.
+
+### XLarge
+
+```{r}
+l_dfCP <- l_cphist_cnXL
+l_dfGC <- l_gchist_cnXL
+
+f_plotMetrics(l_cphist_cnXL, l_gchist_cnXL)
+```
+
+# Comparison
+
+## Training Graphs
+
+Here the graphs for ConvNextXLarge also look ok-isch.
+
+| Model              | Complexity | Groundcover | Used in next step |
+|--------------------|------------|-------------|-------------------|
+| EfficientNet**B0** | \-         | \-          | no                |
+| EfficientNet**B2** | \+         | \+          | yes               |
+| EfficientNet**B4** | \-         | \-          | no                |
+| EfficientNet**B5** | \+         | \~+         | yes               |
+| **Xception**       | \+         | \+          | yes               |
+| ConvNext**Tiny**   | \~+        | \~+         | yes               |
+| ConvNext**Small**  | \+         | \~-         | no                |
+| ConvNext**Base**   | \+         | \-          | no                |
+| ConvNext**Large**  | \+         | \~-         | no                |
+| ConvNext**XLarge** | \~+        | \~-         | no                |
+
+## Training and validation metrics
+
+Just to have a more numeric approach, a table with the last values of training and validation metrics is created. IMPORTEND is result of 10 fold cross-validation (gives robust numbers for the training/validation process) + out of sample test result.
+
+```{r}
+l_cphist_B0$model <- "B0"
+l_cphist_B2$model <- "B2"
+l_cphist_B4$model <- "B4"
+l_cphist_B5$model <- "B5"
+l_cphist_cnT$model <- "T"
+l_cphist_cnS$model <- "S"
+l_cphist_cnB$model <- "B"
+l_cphist_cnL$model <- "L"
+l_cphist_cnXL$model <- "XL"
+l_cphist_XC$model <- "XC"
+
+l_gchist_B0$model <- "B0"
+l_gchist_B2$model <- "B2"
+l_gchist_B4$model <- "B4"
+l_gchist_B5$model <- "B5"
+l_gchist_cnT$model <- "T"
+l_gchist_cnS$model <- "S"
+l_gchist_cnB$model <- "B"
+l_gchist_cnL$model <- "L"
+l_gchist_cnXL$model <- "XL"
+l_gchist_XC$model <- "XC"
+```
+
+```{r}
+# first complexity of surroundings
+l_dfCP <- rbind(l_cphist_B0 %>% slice(n()),
+                l_cphist_B2 %>% slice(n()),
+                l_cphist_B4 %>% slice(n()),
+                l_cphist_B5 %>% slice(n()),
+                l_cphist_cnT %>% slice(n()),
+                l_cphist_cnS %>% slice(n()),
+                l_cphist_cnB %>% slice(n()),
+                l_cphist_cnL %>% slice(n()),
+                l_cphist_cnXL %>% slice(n()),
+                l_cphist_XC %>% slice(n())
+                )
+l_dfCP <- l_dfCP %>% relocate(model)
+l_dfCP
+
+# second groundcover
+l_dfGC <- rbind(l_gchist_B0 %>% slice(n()),
+                l_gchist_B2 %>% slice(n()),
+                l_gchist_B4 %>% slice(n()),
+                l_gchist_B5 %>% slice(n()),
+                l_gchist_cnT %>% slice(n()),
+                l_gchist_cnS %>% slice(n()),
+                l_gchist_cnB %>% slice(n()),
+                l_gchist_cnL %>% slice(n()),
+                l_gchist_cnXL %>% slice(n()),
+                l_gchist_XC %>% slice(n())
+                )
+l_dfGC <- l_dfGC %>% relocate(model)
+l_dfGC
+
+```
+## Train, val metrics
+Table 1: Metrics from all DNN model training of context and groundcover photos. Models beginning with B are from the EfficientNet family (e.g. EfficientNetB0). T, S, B, L, XL are abbreviations for the ConvNext families (ConvNextTiny, Small, Base, Large, XLarge respectively). XC is the abbreviation for the Xception model. KL-Divergence represents Kullback-Leibler Divergence, MRE mean relative error, MSE mean squared error.
+```{r train_val_metrics}
+df_tbl <- bind_rows(
+  l_dfCP %>% 
+    select(!lr) %>% 
+    pivot_longer(
+      cols = -model,
+      # .value tells R to keep that part of the name as a column header
+      names_to = c("type", ".value"),
+      # regex captures the prefix (if exists) and the metrics name
+      names_pattern = "(?:(val)_)?(.+)"
+    ) %>% 
+    mutate(
+      type = if_else(type == "val", "validation", "training"),
+      img_type = "context"
+    ),
+  l_dfGC %>% 
+    select(!lr) %>% 
+    pivot_longer(
+      cols = -model,
+      names_to = c("type", ".value"),
+      names_pattern = "(?:(val)_)?(.+)"
+    ) %>% 
+    mutate(
+      type = if_else(type == "val", "validation", "training"),
+      img_type = "groundcover"
+    )
+) %>% 
+  select(
+    `Image type` = img_type,
+    Stage = type,
+    Model = model,
+    Loss = loss,
+    `KL-Divergence` = kullback_leibler_divergence,
+    MRE = mean_relative_error,
+    MSE = mean_squared_error,
+    Accuracy = accuracy
+  ) %>% 
+  arrange(`Image type`, Stage) %>% 
+  mutate(across(where(is.numeric), \(x) round(x, digits = 3)))
+
+ft <- df_tbl %>% 
+  flextable() %>% 
+  theme_booktabs() %>%
+  flextable::color(i = seq(2, nrow(df_tbl), 2), color = "black", part = "body") %>%
+  flextable::bg(i = seq(2, nrow(df_tbl), 2), bg = "#F9F9F9", part = "body") %>%
+  flextable::hline(i = c(4,9,10,14,19,20,24,29,30,34,39)) %>%
+  flextable::align(align = "center", part = "all") %>%
+  flextable::autofit() %>%
+  flextable::bold(part = "header")
+ft
+ft <- fit_to_width(ft, max_width = 6.5) # for Word file
+# save_as_docx(ft, path = "output/sup_tbl1.docx")
+# write_csv(df_tbl, file = "output/sup_tbl1.csv")
+```
+
+## 10 fold cross-val report
+Groundcover --
+```{r}
+cv_cnt <- read_csv(file = file.path(get_newest_directory("../output/groundcover/convnext_tiny"), "cross_val_res.csv"))
+cv_cns <- read_csv(file = file.path(get_newest_directory("../output/groundcover/convnext_small"), "cross_val_res.csv"))
+cv_cnb <- read_csv(file = file.path(get_newest_directory("../output/groundcover/convnext_base"), "cross_val_res.csv"))
+cv_cnl <- read_csv(file = file.path(get_newest_directory("../output/groundcover/convnext_large"), "cross_val_res.csv"))
+cv_cnxl <- read_csv(file = file.path(get_newest_directory("../output/groundcover/convnext_xlarge"), "cross_val_res.csv"))
+cv_xc <- read_csv(file = file.path(get_newest_directory("../output/groundcover/xception"), "cross_val_res.csv"))
+cv_b0 <- read_csv(file = file.path(get_newest_directory("../output/groundcover/efficientnetb0"), "cross_val_res.csv"))
+cv_b2 <- read_csv(file = file.path(get_newest_directory("../output/groundcover/efficientnetb2"), "cross_val_res.csv"))
+cv_b4 <- read_csv(file = file.path(get_newest_directory("../output/groundcover/efficientnetb4"), "cross_val_res.csv"))
+cv_b5 <- read_csv(file = file.path(get_newest_directory("../output/groundcover/efficientnetb5"), "cross_val_res.csv"))
+
+cv_cnt$model <- "ConvNeXtTiny"
+cv_cns$model <- "ConvNeXtSmall"
+cv_cnb$model <- "ConvNeXtBase"
+cv_cnl$model <- "ConvNeXtLarge"
+cv_cnxl$model <- "ConvNeXtXLarge"
+cv_xc$model <- "Xception"
+cv_b0$model <- "EfficientNetB0"
+cv_b2$model <- "EfficientNetB2"
+cv_b4$model <- "EfficientNetB4"
+cv_b5$model <- "EfficientNetB5"
+
+gc_cv <- bind_rows(
+  cv_cnt,
+  cv_cns,
+  cv_cnb,
+  cv_cnl,
+  cv_cnxl,
+  cv_xc,
+  cv_b0,
+  cv_b2,
+  cv_b4,
+  cv_b5
+) %>% group_by(model) %>% 
+  summarise(across(where(is.numeric), mean, na.rm = TRUE)) %>% 
+  ungroup() %>% 
+  select(-Fold)
+gc_cv
+```
+Complexity --
+```{r}
+cv_cnt <- read_csv(file = file.path(get_newest_directory("../output/complexity/convnext_tiny"), "cross_val_res.csv"))
+cv_cns <- read_csv(file = file.path(get_newest_directory("../output/complexity/convnext_small"), "cross_val_res.csv"))
+cv_cnb <- read_csv(file = file.path(get_newest_directory("../output/complexity/convnext_base"), "cross_val_res.csv"))
+cv_cnl <- read_csv(file = file.path(get_newest_directory("../output/complexity/convnext_large"), "cross_val_res.csv"))
+cv_cnxl <- read_csv(file = file.path(get_newest_directory("../output/complexity/convnext_xlarge"), "cross_val_res.csv"))
+cv_xc <- read_csv(file = file.path(get_newest_directory("../output/complexity/xception"), "cross_val_res.csv"))
+cv_b0 <- read_csv(file = file.path(get_newest_directory("../output/complexity/efficientnetb0"), "cross_val_res.csv"))
+cv_b2 <- read_csv(file = file.path(get_newest_directory("../output/complexity/efficientnetb2"), "cross_val_res.csv"))
+cv_b4 <- read_csv(file = file.path(get_newest_directory("../output/complexity/efficientnetb4"), "cross_val_res.csv"))
+cv_b5 <- read_csv(file = file.path(get_newest_directory("../output/complexity/efficientnetb5"), "cross_val_res.csv"))
+
+cv_cnt$model <- "ConvNeXtTiny"
+cv_cns$model <- "ConvNeXtSmall"
+cv_cnb$model <- "ConvNeXtBase"
+cv_cnl$model <- "ConvNeXtLarge"
+cv_cnxl$model <- "ConvNeXtXLarge"
+cv_xc$model <- "Xception"
+cv_b0$model <- "EfficientNetB0"
+cv_b2$model <- "EfficientNetB2"
+cv_b4$model <- "EfficientNetB4"
+cv_b5$model <- "EfficientNetB5"
+
+co_cv <- bind_rows(
+  cv_cnt,
+  cv_cns,
+  cv_cnb,
+  cv_cnl,
+  cv_cnxl,
+  cv_xc,
+  cv_b0,
+  cv_b2,
+  cv_b4,
+  cv_b5
+) %>% group_by(model) %>% 
+  summarise(across(where(is.numeric), mean, na.rm = TRUE)) %>% 
+  ungroup() %>% 
+  select(-Fold)
+co_cv
+```
+### Table creation
+```{r}
+gc_cv$task <- "Groundcover estimation"
+co_cv$task <- "Complexity estimation"
+cv_df <- bind_rows(gc_cv, co_cv) %>%
+  select(-loss) %>%
+  relocate(task, .after = model) %>% 
+  mutate(across(where(is.numeric), \(x) round(x, digits = 3))) %>% 
+  mutate(RMSE = round(sqrt(mean_squared_error), digits = 3))
+
+cv_df <- cv_df %>% select(
+  Model = model,
+  Task = task,
+  `KL Divergence` = kullback_leibler_divergence,
+  MRE = mean_relative_error,
+  MSE = mean_squared_error,
+  Accuracy = accuracy,
+  RMSE
+)
+
+ft <- cv_df %>% 
+  flextable() %>% 
+  theme_booktabs() %>%
+  flextable::color(i = seq(2, nrow(cv_df), 2), color = "black", part = "body") %>%
+  flextable::bg(i = seq(2, nrow(cv_df), 2), bg = "#F9F9F9", part = "body") %>%
+  flextable::hline(i = c(5,9,10,15,19)) %>%
+  flextable::align(align = "center", part = "all") %>%
+  flextable::autofit() %>%
+  flextable::bold(part = "header")
+ft
+ft <- fit_to_width(ft, max_width = 6.5) # for Word file
+save_as_docx(ft, path = "output/sup_tbl_crossval.docx")
+```
+
+## Test metrics
+Supplement table 3. Metrics from out of sample test.
+```{r}
+# Load test_res.txt for each model
+DNN_models <- c(
+  "convnext_tiny", "convnext_small", "convnext_base", "convnext_large",
+  "convnext_xlarge", "efficientnetb0", "efficientnetb2", "efficientnetb4",
+  "efficientnetb5", "xception"
+)
+# Complexity
+dfco_tst <- tibble()
+dfgc_tst <- tibble()
+for (model in DNN_models) {
+  # Complexity
+  curr_tblco <- read_csv(
+    file = file.path(
+      normalizePath(
+        path = get_newest_directory(file.path(strWDpath, "output/complexity/", model)),
+        winslash = "/"
+      ),
+      "test_res.txt"
+    )
+  ) %>% mutate(model = model)
+  
+  # Groundcover
+  curr_tblgc <- read_csv(
+    file = file.path(
+      normalizePath(
+        path = get_newest_directory(file.path(strWDpath, "output/groundcover/", model)),
+        winslash = "/"
+      ),
+      "test_res.txt"
+    )
+  ) %>% mutate(model = model)
+  
+  dfco_tst <- bind_rows(dfco_tst, curr_tblco)
+  dfgc_tst <- bind_rows(dfgc_tst, curr_tblgc)
+}
+# Complexity
+dfco_tst <- dfco_tst %>% 
+  select(
+    Model = model,
+    Loss = `['loss'`,
+    `KL-divergence` = `'kullback_leibler_divergence'`,
+    MRE = `'mean_relative_error'`,
+    MSE = `'mean_squared_error'`,
+    Accuracy = `'accuracy']`
+  ) %>% 
+  mutate(across(c(Loss, Accuracy), ~str_remove_all(., "\\[|\\]"))) %>% 
+  mutate(across(where(is.character), type.convert, as.is = TRUE)) %>% 
+  mutate(RMSE = sqrt(MSE)) %>% 
+  mutate(across(where(is.numeric), \(x) round(x, digits = 3)))
+
+# Groundcover
+dfgc_tst <- dfgc_tst %>% 
+  select(
+    Model = model,
+    Loss = `['loss'`,
+    `KL-divergence` = `'kullback_leibler_divergence'`,
+    MRE = `'mean_relative_error'`,
+    MSE = `'mean_squared_error'`,
+    Accuracy = `'accuracy']`
+  ) %>% 
+  mutate(across(c(Loss, Accuracy), ~str_remove_all(., "\\[|\\]"))) %>% 
+  mutate(across(where(is.character), type.convert, as.is = TRUE)) %>% 
+  mutate(RMSE = sqrt(MSE)) %>% 
+  mutate(across(where(is.numeric), \(x) round(x, digits = 3)))
+
+dftst <- bind_rows(
+  dfco_tst %>% mutate(Type = "complexity"),
+  dfgc_tst %>% mutate(Type = "groundcover")
+) %>% 
+  select(-Loss)
+
+dftst <- dftst %>% select(
+  Model, Type, `KL Divergence` = `KL-divergence`, MRE, MSE, Accuracy, RMSE
+)
+dftst <- dftst %>% 
+  mutate(
+    Model = recode(
+      Model,
+      "efficientnetb0" = "EfficientNetB0",
+      "efficientnetb2" = "EfficientNetB2",
+      "efficientnetb4" = "EfficientNetB4",
+      "efficientnetb5" = "EfficientNetB5",
+      "convnext_tiny" = "ConvNeXtTiny",
+      "convnext_small" = "ConvNeXtSmall",
+      "convnext_base" = "ConvNeXtBase",
+      "convnext_large" = "ConvNeXtLarge",
+      "convnext_xlarge" = "ConvNeXtXLarge",
+      "xception" = "Xception"
+    ),
+    Type = recode(
+      Type,
+      "complexity" = "Complexity estimation",
+      "groundcover" = "Groundcover estimation"
+    )
+  )
+
+
+ft <- dftst %>% 
+  flextable() %>% 
+  theme_booktabs() %>%
+  flextable::color(i = seq(2, nrow(dftst), 2), color = "black", part = "body") %>%
+  flextable::bg(i = seq(2, nrow(dftst), 2), bg = "#F9F9F9", part = "body") %>%
+  flextable::align(align = "center", part = "all") %>%
+    flextable::hline(i = c(5,9,10,15,19)) %>%
+  flextable::autofit() %>%
+  flextable::bold(part = "header")
+
+ft <- fit_to_width(ft, max_width = 6.5)
+ft
+save_as_docx(ft, path = "output/sup_tbl_dnntst.docx")
+```
+
+
+4 Models will be used in the next step: B5, Xception, ConvNextSmall and -Base.
+
+# Cleanup
+
+Remove all variables and dataframes + functions from R environment.
+
+```{r}
+rm(
+  l_cphist_cnB,
+  l_cphist_cnL,
+  l_cphist_cnS,
+  l_cphist_cnT,
+  l_cphist_cnXL,
+  l_cphist_B0,
+  l_cphist_B2,
+  l_cphist_B4,
+  l_cphist_B5,
+  l_cphist_XC,
+  l_gchist_cnB,
+  l_gchist_cnL,
+  l_gchist_cnS,
+  l_gchist_cnT,
+  l_gchist_cnXL,
+  l_gchist_B0,
+  l_gchist_B2,
+  l_gchist_B4,
+  l_gchist_B5,
+  l_gchist_XC
+)
+rm(ft)
+rm(l_col)
+rm(l_dfCP, l_dfGC)
+rm(f_plotMetrics)
+rm(get_newest_directory)
+rm(df_tbl)
+
+rm(curr_tblco, curr_tblgc)
+rm(dfco_tst, dfgc_tst, dftst)
+
+rm(DNN_models, model, strWDpath)
+rm(co_cv, gc_cv, cv_b0, cv_b2, cv_b4, cv_b5)
+rm(cv_cnt, cv_cns, cv_cnb, cv_cnl, cv_cnxl)
+rm(cv_df, cv_xc)
+```
