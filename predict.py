@@ -38,7 +38,7 @@ def preprocess(img):
     return img / 255.0
 
 
-with open("test_images", "r") as src:
+with open("matched_images.txt", "r") as src:
     if gc == False:
         lines = [e for e in src.read().splitlines() if e[-5] != 'P']
     else:

@@ -907,25 +907,25 @@ l_tmp[which.max(abs(l_tmp$Means)),]
 rm(l_tmp)
 ```
 
-#### Complexity (XCEPTION)
+Complexity
+top 3:
+- 32_beech_l_11_E
+- 32_beech_d_3_S
+- 14_spruce_l_14_E
+worst:
+- 64_pine_l_3_E
+- 10_spruce_c_12_N
+- 63_pine_c_5_N
 
-Picture with the best result: 63_pine_d_2_E.jpg (mean err -0.001)
-
-![Complexity picture with best result using XCEPTION](F:/Projects/RapidAssessment/03_dataRaw/data/GoPro/lowRes/63_pine/63_pine_d_2_E.jpg)
-
-Picture with the worst result: 24_beech_c_13_S.jpg (mean err -2.537)
-
-![Complexity picture with worst result using XCEPTION](F:/Projects/RapidAssessment/03_dataRaw/data/GoPro/lowRes/24_beech/24_beech_c_13_S.jpg)
-
-#### Groundcover (XCEPTION)
-
-Picture with best result: 2_spruce_c_13_P.jpg (mean err 6.938894e-19)
-
-![ground cover picture with best result using XCEPTION](F:/Projects/RapidAssessment/03_dataRaw/data/GoPro/lowRes/02_spruce/2_spruce_c_13_P.jpg)
-
-Picture with worst result: 63_pine_l_15_P.jpg (mean err 0.1)
-
-![Ground cover picture with worst result using XCEPTION](F:/Projects/RapidAssessment/03_dataRaw/data/GoPro/lowRes/63_pine/63_pine_l_15_P.jpg)
+ground cover
+top 3:
+- 28_beech_c_4_P
+- 32_beech_d_2_P
+- 27_beech_d_3_P
+worst:
+- 63_pine_l_15_P
+- 27_beech_l_11_P
+- 43_oak_l_2_P
 
 ##### Plots
 

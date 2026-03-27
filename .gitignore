@@ -3,6 +3,7 @@ $ cat .gitignore
 *.docx
 *.pyc
 test_images
+matched_images.txt
 
 # Ignore some directorys (chace, tmps, big output directory)
 __pychache__/

@@ -499,6 +499,72 @@ Useful resource: <https://f0nzie.github.io/machine_learning_compilation/detailed
 rm(dfPrd_agg.pca, dfPrd_agg_scl)
 ```
 
+## Plot indicators
+Plotting all indicators with facet on management and forest type.
+```{r}
+# ggplot(
+#   data = dfPrd_agg %>% 
+#     select(-c(starts_with("gd"), gc_mean, gc_mean_sd)) %>% 
+#     pivot_longer(
+#       cols = c(starts_with("grade_"), starts_with("gc_")), #matches("^(grade|gc)_"), #starts_with("g"),
+#       names_to = c("prefix", "Indicator"),
+#       names_pattern = "^(grade|gc)_(.+)$",
+#       values_to = "val"
+#     )
+# ) +
+#   theme_bw() +
+#   geom_boxplot(
+#     aes(x = Indicator, y = val, colour = manag)
+#   ) +
+#   facet_grid(species~prefix, scales = "free") +
+#   theme(axis.text.x = element_text(angle = 45, hjust = 1))
+
+base_data <- dfPrd_agg %>% 
+  select(-c(starts_with("gd"))) %>% 
+  pivot_longer(
+    cols = c(starts_with("grade_"), starts_with("gc_")), #matches("^(grade|gc)_"), #starts_with("g"),
+    names_to = c("prefix", "Indicator"),
+    names_pattern = "^(grade|gc)_(.+)$",
+    values_to = "val"
+  )
+
+p_grade <- ggplot(
+  base_data %>% filter(prefix == "grade"),
+  aes(x = Indicator, y = val, colour = manag)
+) +
+  theme_bw() +
+  geom_boxplot() +
+  facet_grid(rows = vars(species), cols = vars(prefix)) +
+  labs(y = "Complexity grade (0-5)", x = NULL) +
+  theme(
+    axis.text.x = element_text(angle = 45, hjust = 1),
+    legend.position = "bottom"
+  )
+
+p_gc <- ggplot(
+  base_data %>% filter(prefix == "gc"),
+  aes(x = Indicator, y = val, colour = manag)
+) +
+  theme_bw() +
+  geom_boxplot() +
+  facet_grid(rows = vars(species), cols = vars(prefix)) +
+  labs(y = "Groundcover (%)", x = NULL) +
+  theme(
+    axis.text.x = element_text(angle = 45, hjust = 1),
+    legend.position = "none"   # will collect from p_grade
+  )
+
+p_grade + p_gc + plot_layout(widths = c(1, 1), guides = "collect") & theme(legend.position = "bottom")
+ggsave(
+  filename = "output/sup_indisbox.png",
+  scale = 4,
+  width = 600,
+  height = 600,
+  units = "px"
+)
+```
+
+
 ## Change of variables from undisturbed to disturbed
 
 Relative change over all indicators/variables that were predicted by AI is calculated. For this a function is created.
@@ -660,7 +726,7 @@ ggplot(
        y = "Change") +
   theme_pubr()
 
-ggplot(
+p1 <- ggplot(
   data = l_dfPrd_reldiff %>% filter(param != "gd_diff" & param != "gc_diff"),
   aes(x = param, y = val, col = manag)
 ) +
@@ -670,12 +736,12 @@ ggplot(
   scale_y_continuous(limits = c(-1,1)) +
   coord_flip() +
   facet_wrap(~manag) +
-  labs(title = "rel. change and management",
+  labs(#title = "rel. change and management",
        x = "Variable",
        y = "Change") +
   theme_pubr()
 
-ggplot(
+p2 <- ggplot(
   data = l_dfPrd_reldiff %>% filter(param != "gd_diff" & param != "gc_diff"),
   aes(x = param, y = val, col = species)
 ) +
@@ -684,8 +750,19 @@ ggplot(
   geom_hline(yintercept = 0, linetype = 5, col = "red4") +
   scale_y_continuous(limits = c(-1,1)) +
   coord_flip() +
-  facet_grid(~species) +
+  facet_grid(manag~species) +
   theme_pubr()
+
+# p1 / p2
+
+ggsave(
+  filename = "output/sup_relchngmngfrst.png",
+  plot = p2,
+  scale = 4,
+  width = 600,
+  height = 600,
+  units = "px"
+)
 ```
 
 Relative change over all variables shows, that most do not show a high relative change, that there are only a few categories from the pictures showing stronger effects. Also there are small differences visible in the strength of the change when comparing managed to unmanaged.
@@ -1024,6 +1101,70 @@ dfF1
 rm(TN, TP, FN, FP, dftest, dfAgg)
 ```
 
+## 2.3 Calc F1 incl. Management
+Calculating the F1 score while differentiating different management approaches.
+```{r}
+# test_set$prd_cls_v vs. test_set$disturbed
+plt_lvl <- test_set %>% 
+  group_by(manag) %>% 
+  summarise(
+    TP = sum(prd_cls_v == "disturbed" & disturbed == "disturbed"),
+    TN = sum(prd_cls_v == "undisturbed" & disturbed == "undisturbed"),
+    FP = sum(prd_cls_v == "disturbed"   & disturbed == "undisturbed"),
+    FN = sum(prd_cls_v == "undisturbed" & disturbed == "disturbed"),
+    .groups = "drop"
+  ) %>% 
+  mutate(
+    Accuracy     = round((TP + TN) / (TP + TN + FP + FN), 3),
+    Sensitivity  = round(TP / (TP + FN), 3),
+    Specificity  = round(TN / (TN + FP), 3),
+    Precision    = round(TP / (TP + FP), 3),
+    Recall       = round(TP / (TP + FN), 3),
+    F1_score     = round(2 * TP / (2 * TP + FP + FN), 3)
+  )
+
+patch_lvl <- dfPrd_agg %>% 
+  group_by(manag) %>% 
+  summarise(
+    TP = sum(prd_cls_v == "disturbed" & disturbed == "disturbed"),
+    TN = sum(prd_cls_v == "undisturbed" & disturbed == "undisturbed"),
+    FP = sum(prd_cls_v == "disturbed"   & disturbed == "undisturbed"),
+    FN = sum(prd_cls_v == "undisturbed" & disturbed == "disturbed"),
+    .groups = "drop"
+  ) %>% 
+  mutate(
+    Accuracy     = round((TP + TN) / (TP + TN + FP + FN), 3),
+    Sensitivity  = round(TP / (TP + FN), 3),
+    Specificity  = round(TN / (TN + FP), 3),
+    Precision    = round(TP / (TP + FP), 3),
+    Recall       = round(TP / (TP + FN), 3),
+    F1_score     = round(2 * TP / (2 * TP + FP + FN), 3)
+  )
+
+tbl2_mngmnt <- bind_rows(
+  plt_lvl %>% mutate(Dataset = "Plot level test set", Task = "A: Disturbance detection", Response = "Disturbed / undisturbed"),
+  patch_lvl %>% mutate(Dataset = "Patch level test set", Task = "A: Disturbance detection", Response = "Disturbed / undisturbed")
+) %>% 
+  select(
+    Task, Dataset, Response, manag,
+    Precision, Recall, Accuracy, `F1-Score` = F1_score
+  )
+
+ft <- tbl2_mngmnt %>% 
+  flextable() %>% 
+  theme_booktabs() %>%
+  flextable::color(i = seq(2, nrow(tbl2_mngmnt), 2), color = "black", part = "body") %>%
+  flextable::bg(i = seq(2, nrow(tbl2_mngmnt), 2), bg = "#F9F9F9", part = "body") %>%
+  flextable::align(align = "center", part = "all") %>%
+  flextable::autofit() %>%
+  flextable::bold(part = "header")
+
+ft <- fit_to_width(ft, max_width = 6.5)
+ft
+
+# save_as_docx(ft, path = "output/tbl2_mngmnt.docx")
+```
+
 # 3. Disturbance severity
 
 To later evaluate the model that results form this approach several functions are needed to calculate things like Root Mean Square Error (RMSE) or Mean Absolute Error (MAE).
@@ -1222,7 +1363,7 @@ cat("Mean Absolute Error(MAE): ", f_MAE(test_set), "\n")
 
 
 ggplot(
-  data = patch_tst,
+  data = dfsev_patch,# patch_tst,
   aes(
     x = abs(severity),
     y = prd_sev
@@ -1437,6 +1578,74 @@ dfF1 <- dfF1 %>% add_row(
 )
 # write_csv(x = dfF1, file = "output/table2.csv")
 dfF1
+```
+#### confusion matrix w. management
+Expanding the confusion matrix to incoorporate management scenarios.
+```{r}
+# tbl2_mngmnt
+
+plt_lvl <- tibble()
+patch_lvl <- tibble()
+for (mng in levels(dfNewDat$manag)) {
+  # Plot level
+  tmp_mng <- tmp_test %>% filter(manag == mng)
+  tmp_df <- as.data.frame(
+    confusionMatrix(
+      data = tmp_mng$PrdTrd,
+      reference = tmp_mng$R_direction,
+      mode = "prec_recall"
+    )$byClass
+  )
+  tmp_df <- rownames_to_column(tmp_df, var = "Response") %>% 
+    mutate(
+      manag = mng,
+      Task = "B: Classifying reorganization pathway",
+      Dataset = "Plot level test set"
+    ) %>% 
+    select(
+      Task, Dataset, Response, manag, Precision, Recall,
+      Accuracy = `Balanced Accuracy`,
+      `F1-Score` = F1
+    )
+  plt_lvl <- bind_rows(plt_lvl, tmp_df)
+  
+  # Patch level
+  tmp_mng <- dfNewDat %>% filter(manag == mng)
+  
+  tmp_df <- as.data.frame(
+    confusionMatrix(
+      data = tmp_mng$PrdTrd,
+      reference = tmp_mng$R_direction,
+      mode = "prec_recall"
+    )$byClass
+  )
+  tmp_df <- rownames_to_column(tmp_df, var = "Response") %>% 
+    mutate(
+      manag = mng,
+      Task = "B: Classifying reorganization pathway",
+      Dataset = "Patch level test set"
+    ) %>% 
+    select(
+      Task, Dataset, Response, manag, Precision, Recall,
+      Accuracy = `Balanced Accuracy`,
+      `F1-Score` = F1
+    )
+  patch_lvl <- bind_rows(patch_lvl, tmp_df)
+}
+tbl2_tmp <- bind_rows(tbl2_mngmnt, plt_lvl, patch_lvl) %>% 
+  mutate(across(where(is.numeric), \(x) round(x, digits = 3)))
+ft <- tbl2_tmp %>% 
+  flextable() %>% 
+  theme_booktabs() %>%
+  flextable::color(i = seq(2, nrow(df_tst), 2), color = "black", part = "body") %>%
+  flextable::bg(i = seq(2, nrow(df_tst), 2), bg = "#F9F9F9", part = "body") %>%
+  flextable::hline(i = c(3,6,10,14,18,22,26)) %>% 
+  flextable::align(align = "center", part = "all") %>%
+  flextable::autofit() %>%
+  flextable::bold(part = "header")
+ft
+ft <- fit_to_width(ft, max_width = 6.5)
+# flextable::save_as_docx(ft, path = "output/tbl2_mngmnt.docx")
 ```
 
 ## Plots

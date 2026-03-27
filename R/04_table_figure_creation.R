@@ -68,6 +68,8 @@ save_as_docx(ft, path = "output/table2.docx")
 
 #### Figure 3 - Observed vs predicted severity ####
 df_fig3 <- read_csv(file = "output/data_fig3.csv")
+df_fig3$manag <- as.factor(df_fig3$manag)
+# df_fig3$manag <- factor(df_fig3$manag, labels = c("Managed", "Unmanaged"))
 p1_plt <- ggplot(
   data = df_fig3,
   aes(
@@ -82,15 +84,26 @@ p1_plt <- ggplot(
   labs(
     title = "Plot level",
     x = "Observed severity (%)",
-    y = "Predicted severity (%)",
-    col = "Species"
+    y = "Predicted severity (%)"
   ) +
   ylim(c(0,100)) +
-  scale_color_paletteer_d("MetBrewer::Kandinsky") +
+  scale_color_paletteer_d(
+    palette = "MetBrewer::Kandinsky",
+    name = "Forest type",
+    labels = c(
+      beech = "Beech",
+      oak = "Oak",
+      pine = "Pine",
+      spruce = "Spruce"
+    )
+  ) +
   theme_pubr() +
-  theme(aspect.ratio = 1)
+  theme(aspect.ratio = 1)# +
+  # facet_wrap(~manag)
 
 df_fig3_patch <- read_csv(file = "output/data_fig3_patch.csv")
+df_fig3_patch$manag <- as.factor(df_fig3_patch$manag)
+# df_fig3_patch$manag <- factor(df_fig3_patch$manag, labels = c("Managed", "Unmanaged"))
 p2_patch <- ggplot(
   data = df_fig3_patch,
   aes(x = severity, y = prd_sev)
@@ -100,13 +113,22 @@ p2_patch <- ggplot(
   labs(
     title = "Patch level",
     x = "Observed severity (%)",
-    y = "Predicted severity (%)",
-    col = "Species"
+    y = "Predicted severity (%)"
   ) +
   ylim(c(0,100)) +
-  scale_color_paletteer_d("MetBrewer::Kandinsky") +
+  scale_color_paletteer_d(
+    "MetBrewer::Kandinsky",
+    name = "Forest type",
+    labels = c(
+      beech = "Beech",
+      oak = "Oak",
+      pine = "Pine",
+      spruce = "Spruce"
+    )
+  ) +
   theme_pubr() +
-  theme(aspect.ratio = 1)
+  theme(aspect.ratio = 1)# +
+  # facet_wrap(~manag)
 
 (p1_plt + p2_patch) +
   plot_annotation(tag_levels = "a") +
@@ -117,7 +139,7 @@ ggsave(
   filename = "output/fig3_2.png",
   scale = 4,
   width = 600,
-  height = 350,
+  height = 350, # 600,
   units = "px"
 )
 
@@ -147,16 +169,20 @@ df4plt$R_direction <- as.factor(df4plt$R_direction)
 df4plt$PrdTrd <- as.factor(df4plt$PrdTrd)
 df4plt$R_direction <- factor(df4plt$R_direction, levels = c("Replacement", "Restructuring", "Reassembly", "Resilience"))
 df4plt$PrdTrd <- factor(df4plt$PrdTrd, levels = c("Replacement", "Restructuring", "Reassembly", "Resilience"))
+df4plt$manag <- as.factor(df4plt$manag)
+# df4plt$manag <- factor(df4plt$manag, labels = c("Managed", "Unmanaged")) #c("Cleared", "Dead"))
 
 df4patch$R_direction <- as.factor(df4patch$R_direction)
 df4patch$PrdTrd <- as.factor(df4patch$PrdTrd)
 df4patch$R_direction <- factor(df4patch$R_direction, levels = c("Replacement", "Restructuring", "Reassembly", "Resilience"))
 df4patch$PrdTrd <- factor(df4patch$PrdTrd, levels = c("Replacement", "Restructuring", "Reassembly", "Resilience"))
+df4patch$manag <- as.factor(df4patch$manag)
+# df4patch$manag <- factor(df4patch$manag, labels = c("Managed", "Unmanaged")) #c("Cleared", "Dead"))
 
 # Plot lvl plot
 p1 <- ggplot(
   data = df4plt %>%
-    select(R_direction, PrdTrd, species) %>%
+    select(R_direction, PrdTrd, species, manag) %>%
     pivot_longer(
       cols = c(R_direction, PrdTrd),
       names_to = "param",
@@ -170,14 +196,15 @@ p1 <- ggplot(
     ),
     position = "fill"
   ) +
-  facet_grid(~species, scales = "free_x") +
+  # facet_grid(~species, scales = "free_x") +
+  facet_grid(manag~species, scales = "free_x") +
   scale_x_discrete(
     "", labels = c("Predicted", "Observed"), guide = guide_axis(angle = 45)
   ) +
   labs(
     y = "Percent",
     fill = "Reorganization pathway:",
-    title = "Plot level trajectory"
+    title = "Plot level"
   ) +
   scale_fill_manual(values = c(
     "Reassembly" = "#fed976",
@@ -191,7 +218,7 @@ p1 <- ggplot(
 # Patch lvl plot
 p2 <- ggplot(
   data = df4patch %>%
-    select(R_direction, PrdTrd, species) %>%
+    select(R_direction, PrdTrd, species, manag) %>%
     pivot_longer(
       cols = c(R_direction, PrdTrd),
       names_to = "param",
@@ -205,14 +232,15 @@ p2 <- ggplot(
     ),
     position = "fill"
   ) +
-  facet_grid(~species, scales = "free_x") +
+  facet_grid(manag~species, scales = "free_x") +
+  # facet_grid(~species, scales = "free_x") +
   scale_x_discrete(
     "", labels = c("Predicted", "Observed"), guide = guide_axis(angle = 45)
   ) +
   labs(
     y = "Percent",
     fill = "Reorganization pathway:",
-    title = "Patch level trajectory"
+    title = "Patch level"
   ) +
   scale_fill_manual(values = c(
     "Reassembly" = "#fed976",
@@ -234,9 +262,9 @@ p2 <- p2 + theme(legend.position = "none")
   patchwork::plot_layout(guides = "collect") & theme(legend.position = "bottom")
 
 ggsave(
-  filename = "output/fig4.png",
+  filename = "output/fig4_mngmnt.png",
   scale = 4,
-  height = 1000,
+  height = 600, # 1000
   width = 600,
   units = "px"
 )
