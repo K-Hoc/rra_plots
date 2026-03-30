@@ -7,17 +7,11 @@ Data generated from pictures using DNNs are here analysed. Meaning within a coup
 ## Workflow
 
 A mixture of .R - scripts and .Rmd - files are used.
-- 01_Visualize_train_val.Rmd - Loads the history.csv files from the model creation and creates some plots with it. Used to get an impression which model had a good training and validation run as well. These results, together with the test results in the model directories help with the model selection.
-- 02_Initial analysis.Rmd - Takes a closer look at the models that showed good results during the 01_Visualize_train_val.Rmd run.
-- 03_Calc_DevIndicators.Rmd - The first approach to create indicators from picture data and work towards the development direction. This file is deprecated, it is replaced by 04_Results_Paper_1.Rmd
-- 04_Results_Paper_1.Rmd - Here all the calculations and transformations for the final paper are done.
+- 00_label_plausibility.R - Script used for checking label plausibility (Figure S6).
+- 01_Visualize_train_val.Rmd - Loads the history.csv files from the model creation and creates some plots with it. Used to get an impression which model had a good training and validation run as well. These results, together with the test results in the model directories help with the model selection. Also Supplement Tables S2 and S3 are created here.
+- 02_Analysis.Rmd - Main analysis notebook, that calculates all metrics and creates or delivers the data for most figures (S4, S5) and tables (2, S4) in the publication.
+- 03_table_figure_creation.R - Script that creates Table 2, Figure 3, Figure 4 for the publication.
 
-So the actual workflow is 01_Visualize_train_val.Rmd, 02_Initial analysis, 04_Results_Paper_1.Rmd
+So the actual workflow is 00_label_plausibility.R, 01_Visualize_train_val.Rmd, 02_Analysis.Rmd, 03_table_figure_creation.R
 
-- Complexity_Analysis.R - Compares the complexity of different pictures created from different DNNs (initial performance analysis of DNNs for Complexity grade)
-- Figure_creation.R - Used as a side script to safe and play around with figure creation.
-- GetUnlabeledPictures.R - Was used to see which pictures out of all pictures in the rapid assessment dataset were not labeled.
-
-### Data required
-
-TODO ...
+- support_functions.R - offer some functionality that is used throughout, like getting latest directory, metric calculations like MAE, RMSE...
