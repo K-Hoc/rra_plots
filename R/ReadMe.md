@@ -14,4 +14,4 @@ A mixture of .R - scripts and .Rmd - files are used.
 
 So the actual workflow is 00_label_plausibility.R, 01_Visualize_train_val.Rmd, 02_Analysis.Rmd, 03_table_figure_creation.R
 
-- support_functions.R - offer some functionality that is used throughout, like getting latest directory, metric calculations like MAE, RMSE...
+- support_functions.R - offer some functionality that is used throughout, like getting latest directory, metric calculations like MAE, RMSE

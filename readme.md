@@ -120,7 +120,7 @@ This repository is released under the Creative Commons Attribution 4.0 Internati
 
 ## Citation and DOI
 
-Fill in the DOI / arXiv ID in `CITATION.bib` after publication. See `CITATION.bib` for the placeholder entry.
+
 
 ## Contributing
 
@@ -129,14 +129,8 @@ Fill in the DOI / arXiv ID in `CITATION.bib` after publication. See `CITATION.bi
 
 ## Acknowledgements
 
-Funded by the FutureForest project. Thanks to field teams for image collection and to collaborators who provided feedback during development.
+The study this repository belongs to the [FutureForest.ai](https://future-forest.eu/) project, funded by the German Federal Ministry for the Environment, Climate Action, Nature Conservation and Nuclear Safety (67KI21002A). Thanks to field teams for image collection and to collaborators who provided feedback during development.
 
 ## Contact
 
 For questions about reproducing analyses, requesting data, or other inquiries, open an issue or contact the authors listed in the paper.
-
-## TODO (post-publication)
-
-- Replace citation placeholders with final DOI/identifier
-- Map each figure in the paper to the exact `output/<model>/<timestamp>/` folder used to generate it
-- Optionally publish a small curated sample dataset for smoke-testing the reproducibility workflow
