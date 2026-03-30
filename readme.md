@@ -56,14 +56,8 @@ python gather_images.py
 ./3_post_train.sh
 ```
 
-You can also run the main Python entrypoints directly for more control:
-
-```bash
-python train_one_fold.py --config configs/<model>.yaml
-python predict.py --model output/<model>/<timestamp>/best.ckpt --data OG_data/ --out output/<model>/<timestamp>/predictions.npy
-```
-
-Refer to each script's docstring or `--help` for full CLI arguments. Now the analysis found in the R directory can be used.
+Refer to each script's docstring or `--help` for full CLI arguments. 
+After predictions are available, the analysis found in the R directory can be used.
 
 ## Directory layout
 
