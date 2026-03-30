@@ -11,7 +11,7 @@ f_tidy_xl <- function(df) {
   corr_cols <- df %>% 
     select(starts_with("corrected_val_")) 
   
-  corr_mat <- as.matrix(corr_cols)   # ✅ dynamic matrix for fast indexing
+  corr_mat <- as.matrix(corr_cols)   # Dynamic matrix for fast indexing
   
   
   # ---- 2. Build corrected-parameter table (long) ----
@@ -28,7 +28,7 @@ f_tidy_xl <- function(df) {
       # extract the numeric index from "param_3"
       idx = readr::parse_number(param_idx),
       
-      # ✅ dynamic lookup
+      # Dynamic lookup
       val_corrected = corr_mat[cbind(row_id, idx)]
     ) %>%
     
@@ -55,7 +55,7 @@ f_tidy_xl <- function(df) {
     
     select(image, param, val, val_corrected) %>%
     
-    # ✅ dedupe by keeping corrected rows first
+    # dedupe by keeping corrected rows first
     group_by(image, param) %>%
     slice_max(!is.na(val_corrected)) %>%
     ungroup()

@@ -488,7 +488,7 @@ co_cv <- bind_rows(
   select(-Fold)
 co_cv
 ```
-### Table creation
+### Table S3 creation
 ```{r}
 gc_cv$task <- "Groundcover estimation"
 co_cv$task <- "Complexity estimation"
@@ -522,8 +522,8 @@ ft <- fit_to_width(ft, max_width = 6.5) # for Word file
 save_as_docx(ft, path = "output/sup_tbl_crossval.docx")
 ```
 
-## Test metrics
-Supplement table 3. Metrics from out of sample test.
+## Test metrics (Table S2)
+Supplement table S2. Metrics from out of sample test.
 ```{r}
 # Load test_res.txt for each model
 DNN_models <- c(

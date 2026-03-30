@@ -1,7 +1,7 @@
 ---
 title: "Analysis_Paper1"
 author: "Kilian Hochholzer"
-date: "2025-02-14"
+date: "2026-03-30"
 output: html_document
 ---
 
@@ -11,6 +11,8 @@ output: html_document
 2.  Disturbance detection
 3.  Disturbance severity
 4.  Post-disturbance development
+
+Some tables and figures are initially created here as well, but the actual figures used in the paper are created in [[03_table_figure_creation.R script]].
 
 ## Libraries
 
@@ -36,6 +38,7 @@ library(paletteer)
 library(khroma)
 
 library(flextable)
+library(patchwork)
 ```
 
 ## Loading .csv-files
@@ -303,7 +306,7 @@ dfCO_hist
 
 The \_hist dataframes contain the 5 metrics from test and validation runs.
 
-## 1.1 Metrics from test runs - TOCHECK
+## 1.1 Metrics from test runs
 
 5 Metrics are evaluated: Loss, Kullback_leibler divergence, mean relative error, mean squared error and accuracy. Stored in test_res.txt.
 ```{r}
@@ -350,29 +353,6 @@ ft <- df_tst %>%
 ft <- fit_to_width(ft, max_width = 6.5)
 ft
 ```
-
-| Date | Model | Loss | Kullback leibler divergence | Mean relative error | Mean squared error | Accuracy |
-|-----------|-----------|-----------|-----------|-----------|-----------|-----------|
-| 10.05.2025 | Xception - GC | 0.02870 | 0.79323 | 0.09704 | 0.02870 | 0.50427 |
-| 09.05.2025 | B0 - GC | 0.042934 | 1.21918 | 0.12814 | 0.04293 | 0.21368 |
-| 09.05.2025 | B2 - GC | 0.04131 | 1.21178 | 0.12745 | 0.04131 | 0.45299 |
-| 09.05.2025 | B4 - GC | 0.03479 | 1.07136 | 0.11514 | 0.03479 | 0.59829 |
-| 09.05.2025 | B5 - GC | 0.03009 | 0.90542 | 0.10750 | 0.03009 | 0.51282 |
-| 10.05.2025 | CNT - GC | 0.03446 | 1.19679 | 0.11466 | 0.03447 | 0.60684 |
-| 10.05.2025 | CNS - GC | 0.02989 | 0.81516 | 0.10408 | 0.02989 | 0.60684 |
-| 10.05.2025 | CNB - GC | 0.02883 | 0.86879 | 0.09778 | 0.02883 | 0.60684 |
-| 13.05.2025 | CNL - GC | 0.03269 | 0.86643 | 0.10849 | 0.03269 | 0.60684 |
-| 13.05.2025 | CNXL - GC | 0.03229 | 0.96562 | 0.10678 | 0.03229 | 0.60684 |
-| 10.05.2025 | Xception - CO | 2.68000 | 0.38602 | 1.20238 | 2.68000 | 0.36842 |
-| 10.05.2025 | B0 - CO | 4.82283 | 17.30694 | 1.52768 | 4.82283 | 0.22368 |
-| 10.05.2025 | B2 - CO | 2.66929 | 0.17052 | 1.24081 | 2.66929 | 0.28947 |
-| 10.05.2025 | B4 - CO | 4.32863 | 14.82100 | 1.42636 | 4.32863 | 0.26316 |
-| 10.05.2025 | B5 - CO | 3.73054 | 8.33829 | 1.30177 | 3.73054 | 0.34211 |
-| 10.05.2025 | CNT - CO | 2.56407 | -0.15456 | 1.24103 | 2.56407 | 0.32895 |
-| 10.05.2025 | CNS - CO | 2.49027 | -0.17696 | 1.23825 | 2.49027 | 0.32895 |
-| 10.05.2025 | CNB - CO | 2.51295 | 0.11058 | 1.23616 | 2.51295 | 0.30263 |
-| 15.05.2025 | CNL - CO | 2.73880 | -0.02276 | 1.26981 | 2.73880 | 0.31579 |
-| 13.05.2025 | CNXL - CO | 2.65121 | -0.10894 | 1.26630 | 2.65121 | 0.32895 |
 
 ## 1.2 Cross-validation metrics
 
@@ -446,79 +426,9 @@ ggplot(
 rm(dfGC_cv, dfGC_cv_mean, dfCO_cv, dfCO_cv_mean)
 ```
 
-# Identifying important components
-
-PCA to identify which variables are important, and looking into the relative change of variables from undisturbed to disturbed.
-
-## PCA - Principal component analysis
-
-The idea of a PCA is to reduce the number of dimensions needed to represent each data point, by searching for principal components. So for an initial dataset of N data points with P variables, K principal components are identified (1 ≤ K ≤ P). A PCA is only possible with numeric data.
-
-```{r PCA}
-### Principal component analysis -> Only possible with numeric data
-## 1. normalizing data
-dfPrd_agg_scl <- scale(dfPrd_agg %>% dplyr::select(-triplet, -manag, - species))
-
-## 2. apply pca
-dfPrd_agg.pca <- princomp(
-  scale(
-    dfPrd_agg_scl# %>% dplyr::select(-triplet, -manag, - species)
-  )
-)
-
-## 3. visualization
-fviz_eig(dfPrd_agg.pca, addlabels = TRUE, geom = "line")
-fviz_pca_var(dfPrd_agg.pca)
-fviz_pca_contrib(dfPrd_agg.pca, choice = "var", axes = 1:3)
-fviz_pca_ind(
-  dfPrd_agg.pca,
-  repel = TRUE,
-  addEllipses = TRUE,
-  ellipse.level = 0.95,
-  habillage = dfPrd_agg$manag
-)
-fviz_pca_ind(
-  dfPrd_agg.pca,
-  repel = TRUE,
-  col.ind = dfPrd_agg$manag,
-  addEllipses = TRUE,
-  ellipse.type = "convex",
-  mean.point = TRUE
-)
-```
-
--   3 Dimensions explain about 90% of the variation
-
--   Variables cluster in 4 directions
-
--   No clear patterns visible when plotting all entries in 2 dimensions
-
-Useful resource: <https://f0nzie.github.io/machine_learning_compilation/detailed-study-of-principal-component-analysis.html>
-
-```{r}
-rm(dfPrd_agg.pca, dfPrd_agg_scl)
-```
-
-## Plot indicators
+## Plot indicators (Figure S4)
 Plotting all indicators with facet on management and forest type.
 ```{r}
-# ggplot(
-#   data = dfPrd_agg %>% 
-#     select(-c(starts_with("gd"), gc_mean, gc_mean_sd)) %>% 
-#     pivot_longer(
-#       cols = c(starts_with("grade_"), starts_with("gc_")), #matches("^(grade|gc)_"), #starts_with("g"),
-#       names_to = c("prefix", "Indicator"),
-#       names_pattern = "^(grade|gc)_(.+)$",
-#       values_to = "val"
-#     )
-# ) +
-#   theme_bw() +
-#   geom_boxplot(
-#     aes(x = Indicator, y = val, colour = manag)
-#   ) +
-#   facet_grid(species~prefix, scales = "free") +
-#   theme(axis.text.x = element_text(angle = 45, hjust = 1))
-
 base_data <- dfPrd_agg %>% 
   select(-c(starts_with("gd"))) %>% 
   pivot_longer(
@@ -554,9 +464,9 @@ p_gc <- ggplot(
     legend.position = "none"   # will collect from p_grade
   )
 
-p_grade + p_gc + plot_layout(widths = c(1, 1), guides = "collect") & theme(legend.position = "bottom")
+(p_grade + p_gc) + plot_layout(widths = c(1, 1), guides = "collect") & theme(legend.position = "bottom")
 ggsave(
-  filename = "output/sup_indisbox.png",
+  filename = "output/sup_figS4.png",
   scale = 4,
   width = 600,
   height = 600,
@@ -701,7 +611,7 @@ l_dfPrd_reldiff$param <- factor(
 )
 ```
 
-### Plot changes
+### Plot changes (Figure S5)
 
 Now some plots are created. Is it possible to see a disturbance from a relative change in indicator values?
 
@@ -711,36 +621,6 @@ Now some plots are created. Is it possible to see a disturbance from a relative 
 
 ```{r plot_rel_changes}
 ## Plot relative Changes
-ggplot(
-  data = l_dfPrd_reldiff %>%
-    filter(param != "gd_diff" & param != "gc_diff"),
-  aes(x = param, y = val)
-) +
-  geom_boxplot(outlier.shape = NA, show.legend = FALSE) +
-  geom_jitter(alpha = 0.15, show.legend = FALSE) +
-  geom_hline(yintercept = 0, linetype = 5, col = "red4") +
-  scale_y_continuous(limits = c(-1,1)) +
-  coord_flip() +
-  labs(title = "rel. change",
-       x = "Indicator",
-       y = "Change") +
-  theme_pubr()
-
-p1 <- ggplot(
-  data = l_dfPrd_reldiff %>% filter(param != "gd_diff" & param != "gc_diff"),
-  aes(x = param, y = val, col = manag)
-) +
-  geom_boxplot(outlier.shape = NA, show.legend = FALSE) +
-  geom_jitter(alpha = 0.15, show.legend = FALSE) +
-  geom_hline(yintercept = 0, linetype = 5, col = "red4") +
-  scale_y_continuous(limits = c(-1,1)) +
-  coord_flip() +
-  facet_wrap(~manag) +
-  labs(#title = "rel. change and management",
-       x = "Variable",
-       y = "Change") +
-  theme_pubr()
-
 p2 <- ggplot(
   data = l_dfPrd_reldiff %>% filter(param != "gd_diff" & param != "gc_diff"),
   aes(x = param, y = val, col = species)
@@ -753,10 +633,10 @@ p2 <- ggplot(
   facet_grid(manag~species) +
   theme_pubr()
 
-# p1 / p2
+p2
 
 ggsave(
-  filename = "output/sup_relchngmngfrst.png",
+  filename = "output/sup_figS5.png",
   plot = p2,
   scale = 4,
   width = 600,
@@ -821,11 +701,11 @@ f_SplitIntoTestTrain <- function(dataset, part_test = 0.75, All_unique = TRUE) {
 }
 ```
 
-# 2. Disturbance detection
+# 2. Disturbance detection (Q1)
 
 ## 2.1 Disturbed / Undisturbed
 
-7 variables are indicators for a disturbance (grade_treespecies, grade_shrubs, grade_moss, grade_mixing, grade_herbs, grade_grass, gc_grasses). A random Forest will be trained on the plot level, so with 1241 datapoints and applied to the site level, so 120 datapoints. First a random Forest ist trained on all the variables, than on the 7 identified.
+A random Forest will be trained on the plot level, so with 1241 datapoints and applied to the site level, so 120 datapoints. First a random Forest ist trained on all the variables.
 
 ```{r}
 ############## All variables ##############
@@ -913,124 +793,7 @@ mDist_v
 dflvlplt <- test_set
 dflvlsit <- dfPrd_agg
 
-ggarrange(
-  ncol = 2,
-  nrow = 1,
-  labels = "AUTO",
-  common.legend = TRUE,
-  
-  ggplot(
-    data = as.data.frame(confusionMatrix(dflvlplt$prd_cls_v, dflvlplt$disturbed)$table)
-  ) +
-    geom_tile(
-      aes(x = Reference, y = Prediction, fill = Freq),
-      color = "white"
-    ) +  # Fill color based on frequency
-    scale_fill_gradient(low = "white", high = "#E69F00", limits = c(0,150)) +  # Gradient from white to blue
-    geom_label(
-      aes(
-        x = Reference,
-        y = Prediction,
-        label = Freq
-      ),
-      vjust = 1
-    ) +  # Add text labels for the numbers
-    theme_pubr() +
-    labs(title = "Test set", x = "Actual", y = "Predicted"),
-  
-  ggplot(
-    data = as.data.frame(confusionMatrix(dflvlsit$prd_cls_v, dflvlsit$disturbed)$table)
-  ) +
-    geom_tile(
-      aes(x = Reference, y = Prediction, fill = Freq),
-      color = "white"
-    ) +  # Fill color based on frequency
-    scale_fill_gradient(low = "white", high = "#E69F00", limits = c(0,150)) +  # Gradient from white to blue
-    geom_label(
-      aes(
-        x = Reference,
-        y = Prediction,
-        label = Freq
-      ),
-      vjust = 1
-    ) +  # Add text labels for the numbers
-    theme_pubr() +
-    labs(title = "Aggregated set", x = "Actual", y = "Predicted")
-)
-
 #rm(tmp, test_set, train_set)
-```
-
-A randomForest using all available variables (18 + target variable) yielded the best results. With a accuracy of 74 % on the test dataset and 86 % on the Plot level dataset. The model trained on the 7 varibales achieved about 6% less accuracy, with 68% on test dataset and 80% on the plot lvl dataset.
-
-```{r}
-# Plot detection of disturbed/undisturbed
-ggplot(data = dfPrd_agg) +
-  geom_bar(
-    aes(
-      x = disturbed,
-      fill = match_v,
-    ),
-    position = "fill"
-  ) +
-  theme_pubr()
-
-ggplot(data = dfPrd_agg) +
-  geom_bar(
-    aes(
-      x = manag,
-      fill = match_v
-    ),
-    position = "fill"
-  ) +
-  labs(
-    y = "Percent",
-    fill = "Prediction: "
-  ) +
-  geom_label(
-    aes(
-      x = manag,
-      fill = match_v,
-      label = scales::percent(
-        after_stat(count/(sum(count)/3)),
-        accuracy = 0.1
-      )
-    ),
-    stat = "count",
-    position = "fill",
-    show.legend = FALSE
-  ) +
-  scale_x_discrete(
-    "Management", labels = c("Cleared", "Dead", "Living")
-  ) +
-  scale_fill_paletteer_d("ggthemes::wsj_red_green", direction = -1) +
-  scale_y_continuous(
-    labels = scales::percent,
-    breaks = scales::pretty_breaks(n = 5)
-  ) +
-  theme_pubr()
-
-## Confusion matrix
-dfPrd_agg$disturbed <- as.factor(dfPrd_agg$disturbed)
-confusionMatrix(dfPrd_agg$prd_cls_v, dfPrd_agg$disturbed)
-ggplot(
-  data = as.data.frame(confusionMatrix(dfPrd_agg$prd_cls_v, dfPrd_agg$disturbed)$table)
-) +
-  geom_tile(
-    aes(x = Reference, y = Prediction, fill = Freq),
-    color = "white"
-  ) +  # Fill color based on frequency
-  scale_fill_gradient(low = "white", high = "blue") +  # Gradient from white to blue
-  geom_label(
-    aes(
-      x = Reference,
-      y = Prediction,
-      label = Freq
-    ),
-    vjust = 1
-  ) +  # Add text labels for the numbers
-  theme_minimal() +
-  labs(title = "Confusion Matrix", x = "Actual", y = "Predicted")
 ```
 
 ## 2.2 Calculating F1-Score
@@ -1101,7 +864,7 @@ dfF1
 rm(TN, TP, FN, FP, dftest, dfAgg)
 ```
 
-## 2.3 Calc F1 incl. Management
+## 2.3 Calc F1 incl. Management (Table 2)
 Calculating the F1 score while differentiating different management approaches.
 ```{r}
 # test_set$prd_cls_v vs. test_set$disturbed
@@ -1165,7 +928,7 @@ ft
 # save_as_docx(ft, path = "output/tbl2_mngmnt.docx")
 ```
 
-# 3. Disturbance severity
+# 3. Disturbance severity (Q2)
 
 To later evaluate the model that results form this approach several functions are needed to calculate things like Root Mean Square Error (RMSE) or Mean Absolute Error (MAE).
 
@@ -1212,76 +975,9 @@ dfSev <- left_join(
   by = join_by(species),
   suffix = c("", "_ref")
 )
-
-# Calculate correlation matrix
-tmp_cor <- cor(
-  dfSev %>%
-    select(-triplet, -species,- manag, -sub_plt, -disturbed),
-  use = "complete.obs"
-)
-ggcorrplot(
-  tmp_cor,
-  type = "upper",
-  outline.color = "white",
-  lab = TRUE
-)
-rm(tmp_cor) # cleanup
 ```
 
-1st exploring the existing data:
-
-```{r dist_sev_exploration}
-ggplot(data = dfSev) +
-  geom_boxplot(
-    aes(
-      x = species,
-      y = severity,
-      colour = species
-    ),
-    outlier.shape = NA
-  ) +
-  geom_point(
-    aes(
-      x = species,
-      y = severity,
-      colour = species
-    ),
-    alpha = 0.5,
-    position = position_jitterdodge(jitter.width = 0.75)
-  ) +
-  #facet_wrap(~manag) +
-  theme_pubr()
-
-ggplot(data = dfSev) +
-  geom_density(
-    aes(
-      x = severity,
-      fill = species
-    ),
-    alpha = .5,
-  ) +
-  stat_overlay_normal_density(
-    aes(x = severity),
-    colour = "red3",
-    linetype = "dashed"
-  ) +
-  facet_wrap(~species) +
-  theme_pubr()
-
-ggplot(data = dfSev) +
-  geom_density(
-    aes(x = severity),
-    alpha = .5
-  ) +
-  stat_overlay_normal_density(
-    aes(x = severity),
-    colour = "red3",
-    linetype = "dashed"
-  ) +
-  theme_pubr()
-```
-
-2nd create a model to predict the disturbace severity.
+Create a model to predict the disturbance severity.
 
 ```{r distsev_model}
 ##### Plot lvl
@@ -1325,14 +1021,15 @@ dfsev_patch$sev_err <- dfsev_patch$prd_sev - dfsev_patch$severity
 # write_csv(x = dfsev_patch, file = "output/data_fig3_patch.csv")
 ```
 
+## Plot Figure 4
 Plotting the predictions of severity.
 
 ```{r plots}
 # # Plot severity to predicted severity
-ggplot(
+p1_plt <- ggplot(
   data = test_set,
   aes(
-    x = abs(severity),
+    x = severity,
     y = prd_sev
   )
 ) +
@@ -1340,18 +1037,24 @@ ggplot(
   geom_point(
     aes(colour = species)
   ) +
-  #geom_abline(alpha = 0.5) +
   labs(
-    #title = "Severity and prd. severity",
+    title = "Plot level",
     x = "Observed severity (%)",
-    y = "Predicted severity (%)",
-    col = "Species"
+    y = "Predicted severity (%)"
   ) +
   ylim(c(0,100)) +
-  #plot_scheme(color("bright")(4)) +
-  #scale_color_paletteer_d("wesanderson::Moonrise2") +
-  scale_color_paletteer_d("MetBrewer::Kandinsky") +
-  theme_pubr()
+  scale_color_paletteer_d(
+    palette = "MetBrewer::Kandinsky",
+    name = "Forest type",
+    labels = c(
+      beech = "Beech",
+      oak = "Oak",
+      pine = "Pine",
+      spruce = "Spruce"
+    )
+  ) +
+  theme_pubr() +
+  theme(aspect.ratio = 1)
 
 summary(lm(prd_sev ~ severity, data = test_set))
 
@@ -1362,30 +1065,34 @@ cat("Root Mean Squared Error(RMSE): ", f_RMSE(test_set$sev_err), "\n")
 cat("Mean Absolute Error(MAE): ", f_MAE(test_set), "\n")
 
 
-ggplot(
-  data = dfsev_patch,# patch_tst,
-  aes(
-    x = abs(severity),
-    y = prd_sev
-  )
+p2_patch <- ggplot(
+  data = dfsev_patch,
+  aes(x = severity, y = prd_sev)
 ) +
   geom_abline(colour = "grey") +
-  geom_point(
-    aes(colour = species)
-  ) +
-  #geom_abline(alpha = 0.5) +
+  geom_point(aes(colour = species)) +
   labs(
-    #title = "Severity and prd. severity",
+    title = "Patch level",
     x = "Observed severity (%)",
-    y = "Predicted severity (%)",
-    col = "Species"
+    y = "Predicted severity (%)"
   ) +
   ylim(c(0,100)) +
-  #plot_scheme(color("bright")(4)) +
-  #scale_color_paletteer_d("wesanderson::Moonrise2") +
-  scale_color_paletteer_d("MetBrewer::Kandinsky") +
+  scale_color_paletteer_d(
+    "MetBrewer::Kandinsky",
+    name = "Forest type",
+    labels = c(
+      beech = "Beech",
+      oak = "Oak",
+      pine = "Pine",
+      spruce = "Spruce"
+    )
+  ) +
   theme_pubr() +
-  labs(title = "Patch lvl")
+  theme(aspect.ratio = 1)
+
+(p1_plt + p2_patch) +
+  plot_annotation(tag_levels = "a") +
+  patchwork::plot_layout(guides = "collect") & theme(legend.position = "bottom")
 ```
 
 Clean the environment:
@@ -1394,7 +1101,7 @@ Clean the environment:
 rm(tmp, test_set, train_set, mDist_v)
 ```
 
-# 4. Post-disturbance development
+# 4. Post-disturbance development (Q3)
 
 A disturbed forest can develop in 4 different ways, all goes back to a change in composition and/or structure. 1. Resilience (no change) 2. Reassembly (change in composition) 3. Restructuring (change in structure) 4. Replacement (change in composition and structure)
 
@@ -1503,31 +1210,9 @@ f_predict <- function(p_model, p_data, p_actualval = NA) {
 }
 ```
 
-## 4.4 Model with all variables
-
-Due to changes in the way the DNNs operate the 7 variables are no longer correct and all variables need to be used.
+## 4.4 Model creation
 
 ```{r}
-##### Image level ##### (dfImg_rPlt)
-tmp <- f_SplitIntoTestTrain(dfImg_rPlt, All_unique = FALSE)
-tmp_train <- tmp[[1]] %>% na.omit()
-tmp_test <- tmp[[2]] %>% na.omit()
-
-# Model creation
-set.seed(161)
-mRF <- caret::train(
-  R_direction ~ .,
-  data = tmp_train %>% select(R_direction, starts_with("g")) %>% na.omit(),
-  method = "rf",
-  trControl = trainControl(method = "repeatedcv", number = 10, repeats = 3)
-)
-# predict development trajectory with test data
-tmp_test$PrdTrd <- f_predict(mRF, tmp_test %>% select(-R_direction))
-nrow(tmp_test[tmp_test$R_direction == tmp_test$PrdTrd,]) / nrow(tmp_test) #~80%
-# predict dev tradj with other data
-dfNewDat$PrdTrd <- f_predict(mRF, dfNewDat %>% select(-R_direction))
-nrow(dfNewDat[dfNewDat$R_direction == dfNewDat$PrdTrd,]) / nrow(dfNewDat) #~85%
-
 ##### Sub-plot level ##### (dfSP_rPlt)
 tmp <- f_SplitIntoTestTrain(dfSP_rPlt, All_unique = FALSE)
 tmp_train <- tmp[[1]] %>% na.omit()
@@ -1551,7 +1236,7 @@ dfNewDat$PrdTrd <- f_predict(mRF, dfNewDat %>% select(-R_direction, -PrdTrd))
 nrow(dfNewDat[dfNewDat$R_direction == dfNewDat$PrdTrd,]) / nrow(dfNewDat)#~87.5%
 ```
 
-### confusion Matrix
+### confusion Matrix (Table 2)
 
 ***Precision***: Proportion of correct positive predictions (True Positives) out of all positive prediction made by the model. It measures the *accuracy of the positive predictions*. ***Recall*** (Sensitivity or True Positive Rate): Measures the proportion of actual positive instances that were correctly identified by the model. So the *ration of True Positives to the actual positives* (True Pos. + False Negatives). ***F1-Score***: Provides a balanced measure of precision and recall, it is derived from *the harmonic mean of precision and recall*.
 
@@ -1579,7 +1264,7 @@ dfF1 <- dfF1 %>% add_row(
 # write_csv(x = dfF1, file = "output/table2.csv")
 dfF1
 ```
-#### confusion matrix w. management
+#### Matrix w. management (Table S4)
 Expanding the confusion matrix to incoorporate management scenarios.
 ```{r}
 # tbl2_mngmnt
@@ -1648,78 +1333,7 @@ ft <- fit_to_width(ft, max_width = 6.5)
 # flextable::save_as_docx(ft, path = "output/tbl2_mngmnt.docx")
 ```
 
-## Plots
-
-Visualizing development classifications
-
-```{r}
-levels(tmp_test$species) <- c("Beech", "Oak", "Pine", "Spruce")
-levels(dfNewDat$species) <- c("Beech", "Oak", "Pine", "Spruce")
-# write_csv(x = tmp_test, file = "output/data_fig4_plot.csv")
-# write_csv(x = dfNewDat, file = "output/data_fig4_patch.csv")
-
-ggarrange(
-  nrow = 2, ncol = 1,
-  common.legend = TRUE,
-  labels = c("(a)", "(b)"),
-  
-  # Plot lvl plot
-  ggplot(data = tmp_test %>%
-           select(R_direction, PrdTrd, species) %>%
-           pivot_longer(cols = c(R_direction, PrdTrd), names_to = "param", values_to = "val")
-         ) +
-    geom_bar(
-      aes(
-        x = interaction(param, species),
-        fill = factor(val)
-      ),
-      position = "fill"
-    ) +
-    facet_grid(~species, scales = "free_x") +
-    scale_x_discrete(
-      "", labels = c("Predicted", "Observed"), guide = guide_axis(angle = 45)
-    ) +
-    labs(
-      y = "Percent",
-      fill = "Reorganization pathway:",
-      title = "Plot level trajectory"
-    ) +
-    #scale_fill_paletteer_d("MetBrewer::Egypt") +
-    scale_fill_paletteer_d("MetBrewer::Kandinsky") +
-    #scale_fill_paletteer_d("wesanderson::Moonrise2") +
-    scale_y_continuous(labels = c("0", "25%", "50%", "75%", "100%")) +
-    theme_pubr(),
-  
-  # Patch lvl plot
-  ggplot(data = dfNewDat %>%
-           select(R_direction, PrdTrd, species) %>%
-           pivot_longer(cols = c(R_direction, PrdTrd), names_to = "param", values_to = "val")
-         ) +
-    geom_bar(
-      aes(
-        x = interaction(param, species),
-        fill = factor(val)
-      ),
-      position = "fill"
-    ) +
-    facet_grid(~species, scales = "free_x") +
-    scale_x_discrete(
-      "", labels = c("Predicted", "Observed"), guide = guide_axis(angle = 45)
-    ) +
-    labs(
-      y = "Percent",
-      fill = "Reorganization pathway:",
-      title = "Patch level trajectory"
-    ) +
-    #scale_fill_paletteer_d("MetBrewer::Egypt") +
-    scale_fill_paletteer_d("MetBrewer::Kandinsky") +
-    #scale_fill_paletteer_d("wesanderson::Moonrise2") +
-    scale_y_continuous(labels = c("0", "25%", "50%", "75%", "100%")) +
-    theme_pubr()
-)
-```
-
-### Summaries - Plot lvl test set
+### Summaries - Plot lvl
 
 ```{r}
 tmp_test$TrdMatch <- tmp_test$R_direction == tmp_test$PrdTrd
