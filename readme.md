@@ -2,8 +2,6 @@
 
 ## Overview
 
-**Authors:** Kilian Hochholzer, Maria Potterf, Michael Reuss, Rupert Seidl, Werner Rammer
-
 **Project:** Rapid assessment of post-disturbance plot images using pretrained deep neural networks (DNNs)
 
 This repository contains code, notebooks and analysis used to train and evaluate pretrained convolutional neural networks for multi-label classification of GoPro images taken at recently disturbed forest plots. The trained model outputs are further used to model and predict post-disturbance vegetation trajectories.
