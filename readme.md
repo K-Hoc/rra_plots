@@ -118,10 +118,6 @@ The raw `1_dataRaw/` used in the analyses is not included in this repository. Ac
 
 This repository is released under the Creative Commons Attribution 4.0 International (CC BY 4.0) license. See the `LICENSE` file for details.
 
-## Citation and DOI
-
-
-
 ## Contributing
 
 - Please open issues for reproducibility problems or bugs.
