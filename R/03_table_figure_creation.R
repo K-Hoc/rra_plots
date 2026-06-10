@@ -70,6 +70,10 @@ save_as_docx(ft, path = "output/table2.docx")
 df_fig3 <- read_csv(file = "output/data_fig3.csv")
 df_fig3$manag <- as.factor(df_fig3$manag)
 # df_fig3$manag <- factor(df_fig3$manag, labels = c("Managed", "Unmanaged"))
+df_fig3_patch <- read_csv(file = "output/data_fig3_patch.csv")
+df_fig3_patch$manag <- as.factor(df_fig3_patch$manag)
+# df_fig3_patch$manag <- factor(df_fig3_patch$manag, labels = c("Managed", "Unmanaged"))
+
 p1_plt <- ggplot(
   data = df_fig3,
   aes(
@@ -101,9 +105,6 @@ p1_plt <- ggplot(
   theme(aspect.ratio = 1)# +
   # facet_wrap(~manag)
 
-df_fig3_patch <- read_csv(file = "output/data_fig3_patch.csv")
-df_fig3_patch$manag <- as.factor(df_fig3_patch$manag)
-# df_fig3_patch$manag <- factor(df_fig3_patch$manag, labels = c("Managed", "Unmanaged"))
 p2_patch <- ggplot(
   data = df_fig3_patch,
   aes(x = severity, y = prd_sev)
@@ -136,11 +137,15 @@ p2_patch <- ggplot(
 
 # Save to file
 ggsave(
-  filename = "output/fig3_2.png",
-  scale = 4,
-  width = 600,
-  height = 350, # 600,
-  units = "px"
+  filename = "output/Figure3.tiff", #"output/fig3_2.png",
+  scale = 3, #4,
+  # width = 600,
+  # height = 350, # 600,
+  # units = "px",
+  width = 90,
+  height = 45,
+  units = "mm",
+  dpi = 500
 )
 
 # summary(lm(prd_sev ~ severity, data = df_fig3))
@@ -167,15 +172,27 @@ df4patch <- read_csv(file = "output/data_fig4_patch.csv")
 
 df4plt$R_direction <- as.factor(df4plt$R_direction)
 df4plt$PrdTrd <- as.factor(df4plt$PrdTrd)
-df4plt$R_direction <- factor(df4plt$R_direction, levels = c("Replacement", "Restructuring", "Reassembly", "Resilience"))
-df4plt$PrdTrd <- factor(df4plt$PrdTrd, levels = c("Replacement", "Restructuring", "Reassembly", "Resilience"))
+df4plt$R_direction <- factor(
+  df4plt$R_direction,
+  levels = c("Replacement", "Restructuring", "Reassembly", "Resilience")
+)
+df4plt$PrdTrd <- factor(
+  df4plt$PrdTrd,
+  levels = c("Replacement", "Restructuring", "Reassembly", "Resilience")
+)
 df4plt$manag <- as.factor(df4plt$manag)
 # df4plt$manag <- factor(df4plt$manag, labels = c("Managed", "Unmanaged")) #c("Cleared", "Dead"))
 
 df4patch$R_direction <- as.factor(df4patch$R_direction)
 df4patch$PrdTrd <- as.factor(df4patch$PrdTrd)
-df4patch$R_direction <- factor(df4patch$R_direction, levels = c("Replacement", "Restructuring", "Reassembly", "Resilience"))
-df4patch$PrdTrd <- factor(df4patch$PrdTrd, levels = c("Replacement", "Restructuring", "Reassembly", "Resilience"))
+df4patch$R_direction <- factor(
+  df4patch$R_direction,
+  levels = c("Replacement", "Restructuring", "Reassembly", "Resilience")
+)
+df4patch$PrdTrd <- factor(
+  df4patch$PrdTrd,
+  levels = c("Replacement", "Restructuring", "Reassembly", "Resilience")
+)
 df4patch$manag <- as.factor(df4patch$manag)
 # df4patch$manag <- factor(df4patch$manag, labels = c("Managed", "Unmanaged")) #c("Cleared", "Dead"))
 
@@ -196,8 +213,18 @@ p1 <- ggplot(
     ),
     position = "fill"
   ) +
-  # facet_grid(~species, scales = "free_x") +
-  facet_grid(manag~species, scales = "free_x") +
+  geom_text(
+    stat = "count",
+    aes(
+      x = interaction(param, species),
+      label = ifelse(after_stat(count), after_stat(count), ""),
+      group = val
+    ),
+    position = position_fill(vjust = 0.5),
+    size = 3
+  ) +
+  facet_grid(~species, scales = "free_x") +
+  # facet_grid(manag~species, scales = "free_x") +
   scale_x_discrete(
     "", labels = c("Predicted", "Observed"), guide = guide_axis(angle = 45)
   ) +
@@ -232,8 +259,18 @@ p2 <- ggplot(
     ),
     position = "fill"
   ) +
-  facet_grid(manag~species, scales = "free_x") +
-  # facet_grid(~species, scales = "free_x") +
+  geom_text(
+    stat = "count",
+    aes(
+      x = interaction(param, species),
+      label = ifelse(after_stat(count), after_stat(count), ""),
+      group = val
+    ),
+    position = position_fill(vjust = 0.5),
+    size = 3
+  ) +
+  # facet_grid(manag~species, scales = "free_x") +
+  facet_grid(~species, scales = "free_x") +
   scale_x_discrete(
     "", labels = c("Predicted", "Observed"), guide = guide_axis(angle = 45)
   ) +
@@ -261,11 +298,19 @@ p2 <- p2 + theme(legend.position = "none")
   plot_annotation(tag_levels = "a") +
   patchwork::plot_layout(guides = "collect") & theme(legend.position = "bottom")
 
+# ggsave(
+#   filename = "output/fig4_mngmnt.png",
+#   scale = 4,
+#   height = 600, # 1000
+#   width = 600,
+#   units = "px"
+# )
 ggsave(
-  filename = "output/fig4_mngmnt.png",
-  scale = 4,
-  height = 600, # 1000
-  width = 600,
-  units = "px"
+  filename = "output/Figure4.tiff",
+  scale = 3,
+  width = 90,
+  height = 90,
+  units = "mm",
+  dpi = 500 
 )
 # --------------------------------------------------------------------

@@ -2,6 +2,7 @@ $ cat .gitignore
 *.csv
 *.docx
 *.pyc
+*.svg
 test_images
 matched_images.txt
 

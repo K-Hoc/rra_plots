@@ -277,6 +277,10 @@ rm(dfCO_agg, dfGC_agg, dfCO_og_agg, dfGC_og_agg)
 | dfPrd_agg | Combination of complexity and groundcover prediction from AI, aggregated to patch level. |
 | l_dfFieldSev | dfFieldSeverity in long format |
 
+```{r raw_summary_stats}
+summary(as.factor(dfFieldData$R_direction))
+```
+
 # 1. Technical validation of DNNs
 
 Technical validation of the different Neural Network models is done in other scripts. Here the results of the 10 models for groundcover and complexity of surroundings are analysed and the best model identified.
@@ -1263,6 +1267,11 @@ dfF1 <- dfF1 %>% add_row(
 )
 # write_csv(x = dfF1, file = "output/table2.csv")
 dfF1
+
+# levels(tmp_test$species) <- c("Beech", "Oak", "Pine", "Spruce")
+# levels(dfNewDat$species) <- c("Beech", "Oak", "Pine", "Spruce")
+# write_csv(x = tmp_test, file = "output/data_fig4_plot.csv")
+# write_csv(x = dfNewDat, file = "output/data_fig4_patch.csv")
 ```
 #### Matrix w. management (Table S4)
 Expanding the confusion matrix to incoorporate management scenarios.
