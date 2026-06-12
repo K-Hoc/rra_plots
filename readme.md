@@ -17,6 +17,7 @@ Please cite the paper associated with this repository when using the code or res
 ## Key contents
 
 - Script for image path gathering: `gather_images.py`
+- Script for image feature extraction: `extract_image_features.py`
 - Training and orchestration scripts: `1_train_all_models.sh`, `train_one_fold.py`, `one_fold_wrapper.py`
 - Prediction and post-processing: `2_run_predictions.sh`, `predict.py`, `post_train_predict_script.py`, `npy_to_csv.py`
 - Preprocessing and model definitions: `preprocess.py`, `model_zoo.py`, `GradCAM.py`
@@ -38,7 +39,15 @@ conda activate rra_plot
 python gather_images.py
 ```
 
-3) Train all models (Git Bash or WSL recommended on Windows):
+3) Optionally extract simple image features from a CSV or plain image list file (`matched_images.txt`):
+```bash
+python extract_image_features.py \
+  --input-csv matched_images.txt \
+  --output-csv image_features.csv \
+  --skip-missing
+```
+
+4) Train all models (Git Bash or WSL recommended on Windows):
 
 ```bash
 ./1_train_all_models.sh

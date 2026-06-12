@@ -313,6 +313,7 @@ The \_hist dataframes contain the 5 metrics from test and validation runs.
 ## 1.1 Metrics from test runs
 
 5 Metrics are evaluated: Loss, Kullback_leibler divergence, mean relative error, mean squared error and accuracy. Stored in test_res.txt.
+
 ```{r}
 # Xception Model
 tst_gc <- read_csv(file = file.path(strGcDNNPath, "test_res.txt"))
@@ -431,7 +432,9 @@ rm(dfGC_cv, dfGC_cv_mean, dfCO_cv, dfCO_cv_mean)
 ```
 
 ## Plot indicators (Figure S4)
+
 Plotting all indicators with facet on management and forest type.
+
 ```{r}
 base_data <- dfPrd_agg %>% 
   select(-c(starts_with("gd"))) %>% 
@@ -477,7 +480,6 @@ ggsave(
   units = "px"
 )
 ```
-
 
 ## Change of variables from undisturbed to disturbed
 
@@ -869,7 +871,9 @@ rm(TN, TP, FN, FP, dftest, dfAgg)
 ```
 
 ## 2.3 Calc F1 incl. Management (Table 2)
+
 Calculating the F1 score while differentiating different management approaches.
+
 ```{r}
 # test_set$prd_cls_v vs. test_set$disturbed
 plt_lvl <- test_set %>% 
@@ -1026,6 +1030,7 @@ dfsev_patch$sev_err <- dfsev_patch$prd_sev - dfsev_patch$severity
 ```
 
 ## Plot Figure 4
+
 Plotting the predictions of severity.
 
 ```{r plots}
@@ -1273,8 +1278,11 @@ dfF1
 # write_csv(x = tmp_test, file = "output/data_fig4_plot.csv")
 # write_csv(x = dfNewDat, file = "output/data_fig4_patch.csv")
 ```
+
 #### Matrix w. management (Table S4)
+
 Expanding the confusion matrix to incoorporate management scenarios.
+
 ```{r}
 # tbl2_mngmnt
 
@@ -1385,8 +1393,11 @@ dfNewDat %>%
   select(2, 3, TrdMatch) %>% 
   summarise(pct_true = mean(TrdMatch) * 100)
 ```
+
 # Cleanup
+
 Removing variables etc. from environment.
+
 ```{r cleanup}
 rm(dfCO, dfCO_hist, dfCO_KH, dfCO_og, dfCO_sp, dfGC, dfGC_hist, dfGC_og)
 rm(dfF1, dfFieldData, dfFieldSeverity, dfGroundtruth, dfImg_rPlt, dfImglvl)
