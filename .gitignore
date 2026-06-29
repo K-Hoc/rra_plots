@@ -25,3 +25,4 @@ R/data_franconia/
 notebooks/Plotting_OOS_pred_gt.ipynb
 notebooks/Visualizing_activations.ipynb
 .Rproj.user
+.positai
