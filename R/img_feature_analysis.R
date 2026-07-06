@@ -8,90 +8,17 @@ library(ggpubr)
 setwd("~/edfm/private/Paper_1/2_work/R/")
 source("support_functions.R")
 
-## -------------- DATA PREPARATION ----------------
-## 1st loading image features and prepare dataframe
-#dfImg_feat <- read_csv(
-#  # file = "../output/2026-06-10-1213_img_features.csv"
-#  file = "~/edfm/private/Paper_1/2_work/output/2026-06-10-1213_img_features.csv"
-#) %>% 
-#  mutate(
-#    image_path = tools::file_path_sans_ext(basename(image_path))
-#  ) %>% 
-## split filename into triplet, species, managemtn, subplot and orientation
-#  separate_wider_delim(
-#    image_path, delim = "_",
-#    names = c("trip_n","species","manag","sub_plt","orient")
-#  ) %>% 
-#  mutate(
-#    species = as.factor(species),
-#    manag = as.factor(manag),
-#    orient = as.factor(orient)
-#  )
-#levels(dfImg_feat$manag) <- c("cleared","dead","living")
-#dfImg_feat <- dfImg_feat |> select(
-#  trip_n, species, manag, sub_plt, orient,
-#  1:8, 11:24
-#)
-#
-## 2nd construct field data dataframe
-## 2.1 load and prepare disturbance severity estimations
-#dfFieldSev <- read_csv(
-#  file = "data_franconia/BA_severity_estimation.csv"
-#)
-#dfFieldSev$trip_n <- as.factor(dfFieldSev$trip_n)
-#dfFieldSev$dom_sp <- as.factor(dfFieldSev$dom_sp)
-#dfFieldSev[dfFieldSev$managed <= 0,]$managed <- 0
-#dfFieldSev[dfFieldSev$unmanaged <= 0,]$unmanaged <- 0
-#
-#l_dfFieldSev <- dfFieldSev %>% 
-#  select(trip_n, dom_sp, managed, unmanaged) %>%
-#  pivot_longer(
-#    cols = c(managed, unmanaged),
-#    names_to = "manag",
-#    values_to = "severity"
-#  )
-#l_dfFieldSev[l_dfFieldSev$manag == "managed",]$manag <- "cleared"
-#l_dfFieldSev[l_dfFieldSev$manag == "unmanaged",]$manag <- "dead"
-#l_dfFieldSev$manag <- factor(
-#  l_dfFieldSev$manag,
-#  levels = c("cleared", "dead", "living")
-#)
-#l_dfFieldSev$severity <- abs(l_dfFieldSev$severity)
-#
-## 2.2 load and prepare reorganization pathway
-#dfFieldData <- read_csv(
-#  file = "../reorg_full.csv"
-#  # file = "~/edfm/private/Paper_1/2_work/reorg_full.csv"
-#  # file = "reorg_full.csv"
-#) %>% 
-#  select(trip_n, manag, species = dom_sp, R_direction) %>% 
-#  mutate(
-#    trip_n  = as.factor(trip_n),
-#    manag   = as.factor(manag),
-#    species = as.factor(species),
-#    R_direction = as.factor(R_direction)
-#  )
-#levels(dfFieldData$manag) <- c("cleared","dead","living")
-#
-## 2.3 join severity and reorganization pathway
-#dfField <- inner_join(
-#  x = dfFieldData,
-#  y = l_dfFieldSev %>% select(-dom_sp),
-#  by = join_by(trip_n, manag)
-#)
-#
-## 3rd combine image features and field data
-#df <- left_join(
-#  x = dfImg_feat, # %>% select(-species),
-#  y = dfField %>% select(-species),
-#  by = join_by(trip_n, manag)
-#) %>% 
-#  mutate(
-#    across(severity, ~replace_na(., 0))
-#  )
+# -------------- DATA PREPARATION ----------------
 df <- f_load_and_combine(img_feat = TRUE)
 
-# 4th gather out of sample test set
+df <- df |> group_by(trip_n, species, manag, sub_plt) |> 
+  summarise(
+    R_direction = first(R_direction),
+    across(where(is.numeric), mean),
+    .groups = "drop"
+  )
+
+# Gather out of sample test set
 df_oos <- df %>% filter(
   trip_n == 3 | trip_n == 26 | trip_n == 47 | trip_n == 64
 )
@@ -140,7 +67,7 @@ set.seed(161)
 mQ1 <- caret::train(
   disturbed ~ .,
   data = df %>%
-    select(-trip_n,-manag,-sub_plt,-orient,-species,-R_direction,-severity),
+    select(-trip_n,-manag,-sub_plt,-species,-R_direction,-severity),
   method = "rf",
   trControl = trainControl(method = "repeatedcv", number = 10, repeats = 3)
 )
@@ -161,7 +88,7 @@ set.seed(161)
 mQ2 <- caret::train(
   severity ~ .,
   data = df %>% filter(!is.na(severity)) %>% 
-    select(-trip_n,-manag,-sub_plt,-orient,-species,-R_direction,-disturbed),
+    select(-trip_n,-manag,-sub_plt,-species,-R_direction,-disturbed),
   method = "rf",
   trControl = trainControl(method = "repeatedcv", number = 10, repeats = 3)
 )
@@ -238,7 +165,7 @@ set.seed(161)
 mQ3 <- caret::train(
   R_direction ~ .,
   data = df %>%
-    select(-trip_n, -manag, -sub_plt, -orient, -species, -severity) %>%
+    select(-trip_n, -manag, -sub_plt, -species, -severity) %>%
     na.omit(),
   method = "rf",
   trControl = trainControl(method = "repeatedcv", number = 10, repeats = 3)
@@ -380,43 +307,11 @@ df_q1
 df_q2
 df_q3
 
-#write_csv(
-#  bind_rows(
-#    df_q1 |> mutate(
-#      class = "disturbed/undisturbed",
-#      ME = NA_real_,
-#      ME_sd = NA_real_,
-#      MAE = NA_real_,
-#      RMSE = NA_real_,
-#      MAPE = NA_real_
-#    ),
-#    df_q2 |> mutate(
-#      class = "severity",
-#      Precision = NA_real_,
-#      Recall = NA_real_,
-#      F1 = NA_real_,
-#      `Balanced Accuracy` = NA_real_
-#    ) |> rename(question = q),
-#    df_q3 |> mutate(
-#      ME = NA_real_,
-#      ME_sd = NA_real_,
-#      MAE = NA_real_,
-#      RMSE = NA_real_,
-#      MAPE = NA_real_
-#    )
-#  ) |> 
-#    select(
-#      question, src, lvl, class, Precision, Recall, F1, `Balanced Accuracy`,
-#      ME, ME_sd, MAE, RMSE, MAPE
-#    ),
-#  file = "output/metrics_imgfeat.csv"
-#)
-
 write_csv(
   bind_rows(
-    df_q1_metr |> mutate(class = "disturbed/undisturbed", q = "q1", src = "rnd plt label"),
-    df_q3_mert |> mutate(src = "rnd plt label"),
-    df_q2 |> mutate(class = "severity")
+    df_q1_metr |> mutate(class = "disturbed/undisturbed", q = "q1", src = "features"),
+    df_q3_mert |> mutate(src = "features"),
+    df_q2 |> mutate(class = "severity", src = "features")
   ),
   file = "output/metr_summ_imgfeat.csv"
 )

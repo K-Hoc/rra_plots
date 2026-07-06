@@ -10,106 +10,7 @@ library(ggpubr)
 setwd("~/edfm/private/Paper_1/2_work/R/")
 source("support_functions.R")
 
-# # -------------- DATA PREPARATION ----------------
-# strCoDNNPath <- normalizePath(
-#   path = get_newest_directory(file.path("../output/complexity/xception")),
-#   winslash = "/"
-# )
-# strGcDNNPath <- normalizePath(
-#   path = get_newest_directory(file.path("../output/groundcover/xception/")),
-#   winslash = "/"
-# )
-# 
-# # 1st loading image features and prepare dataframe
-# dfGC <- read_csv(file = file.path(strGcDNNPath, "predictions.csv")) %>% 
-#   mutate(
-#     image_path = tools::file_path_sans_ext(basename(image_path))
-#   ) %>% 
-#   separate_wider_delim(
-#     image_path,
-#     delim = "_",
-#     names = c("trip_n", "species", "manag", "sub_plt", "orient")
-#   ) %>% 
-#   mutate(
-#     species = as.factor(species),
-#     manag = as.factor(manag),
-#     orient = as.factor(orient)
-#   )
-# levels(dfGC$manag) <- c("cleared", "dead", "living")
-# dfCO <- read_csv(file = file.path(strCoDNNPath, "predictions.csv")) %>% 
-#   mutate(
-#     image_path = tools::file_path_sans_ext(basename(image_path))
-#   ) %>% 
-#   separate_wider_delim(
-#     image_path,
-#     delim = "_",
-#     names = c("trip_n", "species", "manag", "sub_plt", "orient")
-#   ) %>% 
-#   mutate(
-#     species = as.factor(species),
-#     manag = as.factor(manag),
-#     orient = as.factor(orient)
-#   )
-# levels(dfCO$manag) <- c("cleared","dead","living")
-# 
-# # 2nd construct field data dataframe
-# # 2.1 load and prepare disturbance severity estimations
-# dfFieldSev <- read_csv(file = "data_franconia/BA_severity_estimation.csv")
-# dfFieldSev$trip_n <- as.factor(dfFieldSev$trip_n)
-# dfFieldSev$dom_sp <- as.factor(dfFieldSev$dom_sp)
-# dfFieldSev[dfFieldSev$managed <= 0,]$managed <- 0
-# dfFieldSev[dfFieldSev$unmanaged <= 0,]$unmanaged <- 0
-# 
-# l_dfFieldSev <- dfFieldSev %>% 
-#   select(trip_n, dom_sp, managed, unmanaged) %>%
-#   pivot_longer(
-#     cols = c(managed, unmanaged),
-#     names_to = "manag",
-#     values_to = "severity"
-#   )
-# l_dfFieldSev[l_dfFieldSev$manag == "managed",]$manag <- "cleared"
-# l_dfFieldSev[l_dfFieldSev$manag == "unmanaged",]$manag <- "dead"
-# l_dfFieldSev$manag <- factor(
-#   l_dfFieldSev$manag,
-#   levels = c("cleared", "dead", "living")
-# )
-# l_dfFieldSev$severity <- abs(l_dfFieldSev$severity)
-# 
-# # 2.2 load and prepare reorganization pathway
-# dfFieldData <- read_csv(file = "../reorg_full.csv") %>% 
-#   select(trip_n, manag, species = dom_sp, R_direction) %>% 
-#   mutate(
-#     trip_n  = as.factor(trip_n),
-#     manag   = as.factor(manag),
-#     species = as.factor(species),
-#     R_direction = as.factor(R_direction)
-#   )
-# levels(dfFieldData$manag) <- c("cleared","dead","living")
-# 
-# # 2.3 join severity and reorganization pathway
-# dfField <- inner_join(
-#   x = dfFieldData,
-#   y = l_dfFieldSev %>% select(-dom_sp),
-#   by = join_by(trip_n, manag)
-# )
-# 
-# # 2.4 combine groundcover and context
-# dfSubPlts <- inner_join(
-#   x = dfCO %>% group_by(trip_n, species, manag, sub_plt) %>% 
-#     select(-orient) %>%
-#     summarise(across(everything(), mean)) %>% ungroup(),
-#   y = dfGC %>% group_by(trip_n, species, manag, sub_plt) %>% 
-#     select(-orient) %>% 
-#     summarise(across(everything(), mean)) %>% ungroup(),
-#   by = join_by(trip_n, species, manag, sub_plt)
-# )
-# 
-# # 3rd combine image features and field data
-# df <- left_join(
-#   x = dfSubPlts,
-#   y = dfField %>% select(-species),
-#   by = join_by(trip_n, manag)
-# )
+# -------------- DATA PREPARATION ----------------
 df <- f_load_and_combine(img_feat = FALSE)
 
 # 4th gather out of sample test set
@@ -361,38 +262,6 @@ df_q3 <- df_q3 |> select(class, Precision, Recall, F1, `Balanced Accuracy`, lvl,
 df_q1
 df_q2
 df_q3
-
-#write_csv(
-#  bind_rows(
-#    df_q1 |> mutate(
-#      class = "disturbed/undisturbed",
-#      ME = NA_real_,
-#      ME_sd = NA_real_,
-#      MAE = NA_real_,
-#      RMSE = NA_real_,
-#      MAPE = NA_real_
-#    ),
-#    df_q2 |> mutate(
-#      class = "severity",
-#      Precision = NA_real_,
-#      Recall = NA_real_,
-#      F1 = NA_real_,
-#      `Balanced Accuracy` = NA_real_
-#    ) |> rename(question = q),
-#    df_q3 |> mutate(
-#      ME = NA_real_,
-#      ME_sd = NA_real_,
-#      MAE = NA_real_,
-#      RMSE = NA_real_,
-#      MAPE = NA_real_
-#    )
-#  ) |> 
-#    select(
-#      question, src, lvl, class, Precision, Recall, F1, `Balanced Accuracy`,
-#      ME, ME_sd, MAE, RMSE, MAPE
-#    ),
-#  file = "output/metrics_imglabs.csv"
-#)
 
 write_csv(
   bind_rows(

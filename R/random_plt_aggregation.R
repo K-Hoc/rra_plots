@@ -296,39 +296,6 @@ df_q1
 df_q2
 df_q3
 
-# Save to csv ----
-# write_csv(
-#   bind_rows(
-#     df_q1 |> mutate(
-#       class = "disturbed/undisturbed",
-#       ME = NA_real_,
-#       ME_sd = NA_real_,
-#       MAE = NA_real_,
-#       RMSE = NA_real_,
-#       MAPE = NA_real_
-#     ),
-#     df_q2 |> mutate(
-#       class = "severity",
-#       Precision = NA_real_,
-#       Recall = NA_real_,
-#       F1 = NA_real_,
-#       `Balanced Accuracy` = NA_real_
-#     ) |> rename(question = q),
-#     df_q3 |> mutate(
-#       ME = NA_real_,
-#       ME_sd = NA_real_,
-#       MAE = NA_real_,
-#       RMSE = NA_real_,
-#       MAPE = NA_real_
-#     )
-#   ) |> 
-#     select(
-#       question, src, lvl, class, Precision, Recall, F1, `Balanced Accuracy`,
-#       ME, ME_sd, MAE, RMSE, MAPE
-#     ),
-#   file = "output/metrics_1plt.csv"
-# )
-
 write_csv(
   bind_rows(
     df_q1_metr |> mutate(class = "disturbed/undisturbed", q = "q1", src = "rnd plt label"),

@@ -1,7 +1,9 @@
 # ---- Compare image feature performance with indicator performance ----
 library(tidyverse)
 library(flextable)
+library(officer)
 
+setwd("~/edfm/private/Paper_1/2_work/")
 # image feature metrics
 feat_q1 <- read_csv(file = "R/output/metrics_q1_imgfeat.csv") |> mutate(Task = "Disturbance detection")
 feat_q2 <- read_csv(file = "R/output/metrics_q2_imgfeat.csv") |> rename(Question = q)
@@ -10,7 +12,7 @@ feat_q3 <- read_csv(file = "R/output/metrics_q3_imgfeat.csv") |> rename(Question
 # image indicator metrics
 lab_q1 <- read_csv(file = "R/output/metrics_q1_imglab.csv") |> mutate(Task = "Disturbance detection")
 lab_q2 <- read_csv(file = "R/output/metrics_q2_imglab.csv") |> rename(Question = q)
-lab_q3 <- read_csv(file = "R/output/metrics_q3_imglab.csv") |> rename(Question = q, Task = class)
+lab_q3 <- read_csv(file = "R/output/metrics_q3_imglab.csv") |> rename(Task = class)
 
 # Combine as far as possible
 df_q13 <- bind_rows(feat_q1, lab_q1, feat_q3, lab_q3)

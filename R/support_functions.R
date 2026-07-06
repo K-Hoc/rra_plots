@@ -137,7 +137,11 @@ f_load_and_combine <- function(img_feat = FALSE) {
   l_dfFieldSev$severity <- abs(l_dfFieldSev$severity)
 
   # 2.2 load and prepare reorganization pathway
-  dfFieldData <- read_csv(file = "../reorg_full.csv") %>% 
+  load(file = "../../1_dataRaw/out_reorg_full_v3/out_reorg_full.Rdata")
+  dfFieldData <- out_reorg_full
+  #dfFieldData <- read_csv(file = "../reorg_full.csv") %>% 
+
+  dfFieldData <- dfFieldData %>%
     select(trip_n, manag, species = dom_sp, R_direction) %>% 
     mutate(
       trip_n  = as.factor(trip_n),

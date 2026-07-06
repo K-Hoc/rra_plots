@@ -62,7 +62,7 @@ if (.Platform$OS.type == "windows") {
 }
 strWDpath <- normalizePath(strWDpath)
 
-source("support_functions.R")
+source("R/support_functions.R")
 
 # Set path to DNN model directory
 strCoDNNPath <- normalizePath(
@@ -76,22 +76,24 @@ strGcDNNPath <- normalizePath(
 
 #### Load Groundtruth ####
 dfCO_og <- read.csv(
-  "../../1_dataRaw/compl_cleaned.csv",
+  "../1_dataRaw/compl_cleaned.csv",
   sep = ",",
   dec = "."
 )
 dfGC_og <- read.csv(
-  "../../1_dataRaw/paths_and_labels.csv",
+  "../1_dataRaw/paths_and_labels.csv",
   sep = ",",
   dec = "."
 )
 
 #### Load FieldData ####
-dfFieldData <- read.csv(
-  file = "../reorg_full.csv",
-  sep = ",",
-  dec = "."
-)
+# dfFieldData <- read.csv(
+#   file = "reorg_full.csv",
+#   sep = ",",
+#   dec = "."
+# )
+load(file = "../1_dataRaw/out_reorg_full_v3/out_reorg_full.Rdata")
+dfFieldData <- out_reorg_full
 
 # set datatypes
 dfFieldData$trip_n  <- as.factor(dfFieldData$trip_n)
@@ -102,7 +104,7 @@ levels(dfFieldData$manag) <- c("cleared","dead","living")
 
 #### Load newly labeled complexity data ####
 dfCO_KH <- readxl::read_excel(
-  path = "../../1_dataRaw/compl_KH.xlsx",
+  path = "../1_dataRaw/compl_KH.xlsx",
   sheet = 1
 ) %>% filter(!is.na(Baumschicht)) %>% 
   select(
@@ -933,7 +935,7 @@ ft <- tbl2_mngmnt %>%
 ft <- fit_to_width(ft, max_width = 6.5)
 ft
 
-# save_as_docx(ft, path = "output/tbl2_mngmnt.docx")
+save_as_docx(ft, path = "output/tbl2_mngmnt.docx")
 ```
 
 # 3. Disturbance severity (Q2)
@@ -1013,7 +1015,7 @@ test_set$prd_sev <- predict(mSevFT, test_set)
 test_set$sev_err <- test_set$prd_sev - test_set$severity
 
 # Save to file
-# write_csv(x = test_set, file = "output/data_fig3.csv")
+write_csv(x = test_set, file = "output/data_fig3.csv")
 
 dfsev_patch <- dfSev %>% 
   group_by(triplet, species, manag) %>% 
@@ -1026,7 +1028,7 @@ dfsev_patch$prd_sev <- predict(mSevFT, dfsev_patch)
 dfsev_patch$sev_err <- dfsev_patch$prd_sev - dfsev_patch$severity
 
 # Save to file
-# write_csv(x = dfsev_patch, file = "output/data_fig3_patch.csv")
+write_csv(x = dfsev_patch, file = "output/data_fig3_patch.csv")
 ```
 
 ## Plot Figure 4
@@ -1145,6 +1147,7 @@ dfSPlvl <- inner_join(
   left_join(
     x = .,
     y = dfFieldData %>% select(trip_n, manag, dom_sp, R_direction),
+    #y = out_reorg_full |> select(trip_n, manag, dom_sp, R_direction),
     by = join_by(triplet == trip_n, species == dom_sp, manag)
   ) %>% select(-orient)
 
@@ -1241,7 +1244,7 @@ mRF
 tmp_test$PrdTrd <- f_predict(mRF, tmp_test %>% select(-R_direction))
 nrow(tmp_test[tmp_test$R_direction == tmp_test$PrdTrd,]) / nrow(tmp_test) #~84%
 # predict dev tradj with other data
-dfNewDat$PrdTrd <- f_predict(mRF, dfNewDat %>% select(-R_direction, -PrdTrd))
+dfNewDat$PrdTrd <- f_predict(mRF, dfNewDat %>% select(-R_direction)) #, -PrdTrd))
 nrow(dfNewDat[dfNewDat$R_direction == dfNewDat$PrdTrd,]) / nrow(dfNewDat)#~87.5%
 ```
 
@@ -1270,13 +1273,13 @@ dfF1 <- dfF1 %>% add_row(
   set = "aggregat",
   task = "development"
 )
-# write_csv(x = dfF1, file = "output/table2.csv")
+write_csv(x = dfF1, file = "output/table2.csv")
 dfF1
 
-# levels(tmp_test$species) <- c("Beech", "Oak", "Pine", "Spruce")
-# levels(dfNewDat$species) <- c("Beech", "Oak", "Pine", "Spruce")
-# write_csv(x = tmp_test, file = "output/data_fig4_plot.csv")
-# write_csv(x = dfNewDat, file = "output/data_fig4_patch.csv")
+levels(tmp_test$species) <- c("Beech", "Oak", "Pine", "Spruce")
+levels(dfNewDat$species) <- c("Beech", "Oak", "Pine", "Spruce")
+write_csv(x = tmp_test, file = "output/data_fig4_plot.csv")
+write_csv(x = dfNewDat, file = "output/data_fig4_patch.csv")
 ```
 
 #### Matrix w. management (Table S4)
@@ -1347,7 +1350,7 @@ ft <- tbl2_tmp %>%
   flextable::bold(part = "header")
 ft
 ft <- fit_to_width(ft, max_width = 6.5)
-# flextable::save_as_docx(ft, path = "output/tbl2_mngmnt.docx")
+flextable::save_as_docx(ft, path = "output/tbl2_mngmnt.docx")
 ```
 
 ### Summaries - Plot lvl

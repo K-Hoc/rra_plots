@@ -1,10 +1,10 @@
 # This script should performa a sensitivity analysis to assess the impact of complexity indicators compared to the groundcover indicators.
-source("support_functions.R")
 library(tidyverse)
 library(caret)
 library(yardstick)
 
 setwd("~/edfm/private/Paper_1/2_work/R/")
+source("support_functions.R")
 
 # DATA PREPARATION ----
 strCoDNNPath <- normalizePath(
