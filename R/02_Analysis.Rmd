@@ -1200,6 +1200,13 @@ dfNewDat <- inner_join(
 dfNewDat$R_direction <- as.factor(dfNewDat$R_direction)
 ```
 
+Report class frequencies (resilience, replacement, restructuring, reassembly)
+
+```{r}
+summary(dfNewDat$R_direction) # Patch lvl
+summary(dfSP_rPlt$R_direction) # Plot lvl
+```
+
 ## 4.2 Predict function
 
 ```{r}

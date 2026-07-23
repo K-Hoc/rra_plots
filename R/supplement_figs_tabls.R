@@ -2,6 +2,8 @@
 # Creation of supplemental figures and tables
 library(tidyverse)
 library(patchwork)
+library(paletteer)
+library(ggpubr)
 
 # Table S1 - Parameters of neural networks ####
 # Gathered from website (keras.io/api/applications)
@@ -18,9 +20,9 @@ library(patchwork)
 # Figure S2 - Predicted vs. observed disturbance severity ####
 df_figS2 <- read_csv(file = "output/data_fig3.csv")
 
-df_figS2$manag <- as.factor(df_fig3$manag)
+df_figS2$manag <- as.factor(df_figS2$manag)
 df_figS2_patch <- read_csv(file = "output/data_fig3_patch.csv")
-df_figS2_patch$manag <- as.factor(df_fig3_patch$manag)
+df_figS2_patch$manag <- as.factor(df_figS2_patch$manag)
 
 f_figS2_plot <- function(data, lvl) {
   r_plt <- ggplot(
@@ -60,17 +62,25 @@ f_figS2_plot <- function(data, lvl) {
 p1_plt <- f_figS2_plot(df_figS2, "Plot level")
 p2_plt <- f_figS2_plot(df_figS2_patch, "Patch level")
 
-(p1_plt + p2_patch) +
+(p1_plt / p2_plt) +
   plot_annotation(tag_levels = "a") +
   patchwork::plot_layout(guides = "collect") & theme(legend.position = "bottom")
 
 ggsave(
   filename = "output/FigureS2.tiff",
   scale = 4,
-  width = 600,
-  height = 350,
-  units = "px",
+  width = 45,
+  height = 45,
+  units = "mm",
   dpi = 500
+)
+ggsave(
+  filename = "output/FigureS2.pdf",
+  scale = 4,
+  width = 600,
+  height = 600,
+  units = "px",
+  dpi = 300
 )
 
 # Figure S3 - Observed vs. predicted post disturbance reorganization pathways ####
@@ -164,12 +174,20 @@ p2 <- p2 + theme(legend.position = "none")
   patchwork::plot_layout(guides = "collect") & theme(legend.position = "bottom")
 
 ggsave(
-  filename = "output/figS3.tiff",
+  filename = "output/FigureS3.tiff",
+  scale = 5,
+  height = 45,
+  width = 45,
+  units = "mm",
+  dpi = 500
+)
+ggsave(
+  filename = "output/FigureS3.pdf",
   scale = 4,
   height = 600,
   width = 600,
   units = "px",
-  dpi = 500
+  dpi = 300
 )
 
 # Figure S4 - Structural complexity and groundcover across forests and management ####

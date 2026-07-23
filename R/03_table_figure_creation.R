@@ -147,6 +147,14 @@ ggsave(
   units = "mm",
   dpi = 500
 )
+ggsave(
+  filename = "output/Figure3.pdf",
+  scale = 3,
+  width = 90,
+  height = 45,
+  units = "mm",
+  dpi = 300
+)
 
 # summary(lm(prd_sev ~ severity, data = df_fig3))
 cat("Plot level metrics\n")
@@ -312,5 +320,13 @@ ggsave(
   height = 90,
   units = "mm",
   dpi = 500 
+)
+ggsave(
+  filename = "output/Figure4.pdf",
+  scale = 3,
+  width = 90,
+  height = 90,
+  units = "mm",
+  dpi = 300
 )
 # --------------------------------------------------------------------
