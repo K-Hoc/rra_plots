@@ -1,0 +1,487 @@
+library(tidyverse)
+library(patchwork)
+library(ggpubr)
+library(paletteer)
+
+# ============================================================
+# LOAD ANALYSES
+# ============================================================
+
+analysis_files <- list.files(
+  "output/analyses",
+  pattern = "\\.rds$",
+  full.names = TRUE
+)
+
+analyses <- analysis_files |>
+  set_names(
+    tools::file_path_sans_ext(
+      basename(analysis_files)
+    )
+  ) |>
+  map(readRDS)
+
+# ============================================================
+# USER SETTINGS
+# ============================================================
+
+analysis_name <- "labels_random_meanpatch" #"labels_oos_meanpatch"
+
+res <- analyses[[analysis_name]]
+
+# output directory
+dir.create(
+  file.path("output", "figures", analysis_name),
+  recursive = TRUE,
+  showWarnings = FALSE
+)
+
+# ============================================================
+# FIGURE 3 - Observed vs Predicted Severity
+# ============================================================
+
+df_fig3 <- res$predictions$plot |> filter(manag != "living")
+df_fig3_patch <- res$predictions$patch |> filter(manag != "living")
+
+p_plot <- ggplot(
+  df_fig3,
+  aes(
+    x = severity,
+    y = pred_sev
+  )
+) +
+  geom_abline(
+    slope = 1,
+    intercept = 0,
+    colour = "grey50"
+  ) +
+  geom_point(
+    aes(colour = species),
+    alpha = 0.75
+  ) +
+  coord_equal() +
+  xlim(0,100) +
+  ylim(0,100) +
+  theme_pubr() +
+  scale_color_paletteer_d(
+    "MetBrewer::Kandinsky"
+  ) +
+  labs(
+    title = "Plot level",
+    x = "Observed severity (%)",
+    y = "Predicted severity (%)"
+  )
+
+p_patch <- ggplot(
+  df_fig3_patch,
+  aes(
+    x = severity,
+    y = pred_sev
+  )
+) +
+  geom_abline(
+    slope = 1,
+    intercept = 0,
+    colour = "grey50"
+  ) +
+  geom_point(
+    aes(colour = species),
+    alpha = 0.75
+  ) +
+  coord_equal() +
+  xlim(0,100) +
+  ylim(0,100) +
+  theme_pubr() +
+  scale_color_paletteer_d(
+    "MetBrewer::Kandinsky"
+  ) +
+  labs(
+    title = "Patch level",
+    x = "Observed severity (%)",
+    y = "Predicted severity (%)"
+  )
+
+fig3 <- (p_plot + p_patch) +
+  plot_annotation(tag_levels = "a") +
+  plot_layout(guides = "collect") &
+  theme(
+    legend.position = "bottom"
+  )
+
+fig3
+
+ggsave(
+  filename = file.path(
+    "output",
+    "figures",
+    analysis_name,
+    "Figure3_severity.pdf"
+  ),
+  plot = fig3,
+  width = 90,
+  height = 45,
+  units = "mm"
+)
+
+ggsave(
+  filename = file.path(
+    "output",
+    "figures",
+    analysis_name,
+    "Figure3_severity.tiff"
+  ),
+  plot = fig3,
+  width = 90,
+  height = 45,
+  units = "mm",
+  dpi = 500
+)
+
+# ============================================================
+# FIGURE 4 - Reorganization Pathway
+# ============================================================
+
+df4plt <- res$predictions$plot |>
+  rename(
+    PrdTrd = R_dir_pred
+  ) |> 
+  filter(manag != "living")
+
+df4patch <- res$predictions$patch |>
+  rename(
+    PrdTrd = R_dir_pred
+  ) |> 
+  filter(manag != "living")
+
+trajectory_cols <- c(
+  Reassembly = "#fed976",
+  Replacement = "#bd0026",
+  Resilience = "#a6bddb",
+  Restructuring = "#fd8d3c"
+)
+
+make_traj_plot <- function(df, title) {
+  ggplot(
+    df |>
+      select(
+        R_direction,
+        PrdTrd,
+        species
+      ) |>
+      pivot_longer(
+        c(R_direction, PrdTrd),
+        names_to = "type",
+        values_to = "value"
+      )
+  ) +
+    geom_bar(
+      aes(
+        x = interaction(type, species),
+        fill = value
+      ),
+      position = "fill"
+    ) +
+    geom_text(
+      stat = "count",
+      aes(
+        x = interaction(type, species),
+        label = ifelse(after_stat(count), after_stat(count), ""),
+        group = value
+      ),
+      position = position_fill(vjust = 0.5),
+      size = 3
+    ) +
+    facet_grid(
+      ~species,
+      scales = "free_x"
+    ) +
+    scale_fill_manual(
+      values = trajectory_cols
+    ) +
+    scale_x_discrete(
+      labels = c(
+        "Observed",
+        "Predicted"
+      )
+    ) +
+    labs(
+      title = title,
+      x = "",
+      y = "Proportion",
+      fill = "Pathway"
+    ) +
+    theme_pubr()
+}
+
+p1 <- make_traj_plot(
+  df4plt,
+  "Plot level"
+)
+
+p2 <- make_traj_plot(
+  df4patch,
+  "Patch level"
+)
+
+fig4 <- (p1 / p2) +
+  plot_annotation(
+    tag_levels = "a"
+  ) +
+  plot_layout(guides = "collect") &
+  theme(
+    legend.position = "bottom"
+  )
+
+fig4
+
+ggsave(
+  file.path(
+    "output",
+    "figures",
+    analysis_name,
+    "Figure4_pathway.pdf"
+  ),
+  fig4,
+  width = 90,
+  height = 90,
+  units = "mm"
+)
+
+ggsave(
+  file.path(
+    "output",
+    "figures",
+    analysis_name,
+    "Figure4_pathway.tiff"
+  ),
+  fig4,
+  width = 90,
+  height = 90,
+  units = "mm",
+  dpi = 500
+)
+
+##############################################################################
+##############################################################################
+##############################################################################
+# Comparison figures
+
+# ============================================================
+# COLLECT ALL METRICS
+# ============================================================
+
+all_metrics <- bind_rows(
+  lapply(
+    analyses,
+    function(x) {
+
+      x$metrics$summary |>
+        mutate(
+          src = x$metadata$src,
+          split_method = x$metadata$split_method,
+          patch_method = x$metadata$patch_method
+        )
+
+    }
+  )
+)
+
+# Comparison 1 - Disturbance detection
+q1_comparison <- all_metrics |>
+  filter(
+    class == "disturbed/undisturbed"
+  )
+
+ggplot(
+  q1_comparison,
+  aes(
+    src,
+    F1,
+    fill = lvl
+  )
+) +
+  geom_col(
+    position = position_dodge()
+  ) +
+  coord_flip() +
+  theme_pubr() +
+  labs(
+    x = "",
+    y = "F1 Score",
+    fill = "Level"
+  )
+
+# Comparison 2 - severity estimation
+q2_comparison <- all_metrics |>
+  filter(
+    !is.na(MAE)
+  )
+
+ggplot(
+  q2_comparison,
+  aes(
+    src,
+    RMSE,
+    fill = lvl
+  )
+) +
+  geom_col(
+    position = position_dodge()
+  ) +
+  coord_flip() +
+  theme_pubr() +
+  labs(
+    y = "RMSE",
+    x = "",
+    fill = "Level"
+  )
+
+# Comparison 3 - Pathway classification
+q3_comparison <- all_metrics |>
+  filter(
+    class %in% c(
+      "Reassembly",
+      "Replacement",
+      "Resilience",
+      "Restructuring"
+    )
+  )
+
+ggplot(
+  q3_comparison,
+  aes(
+    class,
+    F1,
+    fill = src
+  )
+) +
+  geom_col(
+    position = position_dodge()
+  ) +
+  facet_wrap(
+    ~lvl
+  ) +
+  theme_pubr() +
+  labs(
+    x = "",
+    y = "F1 Score",
+    fill = "Analysis"
+  )
+
+# Macro F1
+macro_f1 <- all_metrics |>
+  filter(
+    !is.na(Macro_F1)
+  )
+
+ggplot(
+  macro_f1,
+  aes(
+    src,
+    Macro_F1,
+    colour = lvl
+  )
+) +
+  geom_point(
+    size = 4
+  ) +
+  geom_errorbar(
+    aes(
+      ymin = Macro_F1_low,
+      ymax = Macro_F1_high
+    ),
+    width = 0.15
+  ) +
+  coord_flip() +
+  theme_pubr() +
+  labs(
+    x = "",
+    y = "Macro F1",
+    colour = "Level"
+  )
+
+# ============================================================
+# Table 2 - creation
+# ============================================================
+library(flextable)
+library(officer)
+
+# Prepare data
+df_table2 <- res$metrics$summary |>
+  mutate(
+    across(
+      where(is.numeric),
+      ~ round(.x, 3)
+    )
+  ) |>
+  filter(
+    q %in% c("q1", "q3")
+  ) |>
+  select(
+    q,
+    lvl,
+    class,
+    Precision,
+    Recall,
+    F1,
+    Overall_accuracy,
+    `Balanced Accuracy`
+  ) |>
+  mutate(
+    Task = case_when(
+      q == "q1" ~ "A: Disturbance detection",
+      q == "q3" ~ "B: Reorganization pathway"
+    ),
+    
+    Dataset = case_when(
+      lvl == "plot" ~ "Plot level",
+      lvl == "patch" ~ "Patch level"
+    ),
+    
+    Response = case_when(
+      class == "disturbed/undisturbed" ~
+        "Disturbed / undisturbed",
+
+      TRUE ~ class
+    ),
+    Overall_accuracy = if_else(
+      condition = (q == "q3"),
+      true = `Balanced Accuracy`,
+      false = Overall_accuracy
+    )
+  ) |>
+  select(
+    Task,
+    Dataset,
+    Response,
+    Precision,
+    Recall,
+    F1,
+    Accuracy = Overall_accuracy
+  ) |> 
+  na.omit()
+
+# Create flextable
+ft <- df_table2 |>
+  flextable() |>
+  theme_booktabs() |>
+  color(i = seq(2, nrow(df_table2), 2), color = "black", part = "body") |> 
+  bg(i = seq(2, nrow(df_table2), 2), bg = "#F9F9F9", part = "body") |> 
+  hline(i = c(1,2,6)) |> 
+  align(align = "center",part = "all") |>
+  bold(part = "header") |>
+  autofit()
+ft
+
+ft <- fit_to_width(ft, max_width = 6.5)
+
+# Save as word table
+save_as_docx(
+  ft,
+  path = file.path(
+    "output",
+    "figures",
+    analysis_name,
+    "Table2.docx"
+  )
+)

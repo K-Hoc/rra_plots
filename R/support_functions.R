@@ -283,3 +283,491 @@ f_confusion_to_metrics <- function(conf_mat, metrics_df = NULL, class_col = "lvl
   
   return(combined)
 }
+
+
+# New Function: Bootstrap Macro-F1
+# This must be run on the RAW data, not the confusion matrix
+f_calculate_macro_f1_boot <- function(data, truth_col, pred_col, iterations = 500) {
+  
+  boot_f1_scores <- numeric(iterations)
+  
+  for (i in 1:iterations) {
+    # 1. Resample the original data with replacement
+    boot_idx <- sample(nrow(data), replace = TRUE)
+    boot_data <- data[boot_idx, ]
+    
+    # 2. Create temporary factors to ensure levels match even if a class is missing in a sample
+    # This is crucial! If a bootstrap sample misses a class, 'confusionMatrix' will error 
+    # unless we force the levels to match the original data.
+    all_levels <- levels(data[[truth_col]])
+    
+    # 3. Calculate F1 using your existing logic style (or caret)
+    try({
+      # We use confusionMatrix mode='everything' to get per-class metrics easily
+      cm <- confusionMatrix(
+        factor(boot_data[[pred_col]], levels = all_levels),
+        factor(boot_data[[truth_col]], levels = all_levels),
+        mode = "everything"
+      )
+      
+      # Extract F1 for all classes and take the mean (Macro-F1)
+      # We handle NAs in case a class has 0 precision/recall in a sample
+      f1_per_class <- cm$byClass[, "F1"]
+      boot_f1_scores[i] <- mean(f1_per_class, na.rm = TRUE)
+    }, silent = TRUE)
+  }
+  
+  # Remove any failed iterations (NAs)
+  boot_f1_scores <- boot_f1_scores[!is.na(boot_f1_scores)]
+  
+  # 4. Return a summary tibble
+  return(tibble(
+    Macro_F1 = mean(boot_f1_scores),
+    Macro_F1_low = quantile(boot_f1_scores, 0.025),
+    Macro_F1_high = quantile(boot_f1_scores, 0.975)
+  ))
+}
+
+
+library(gt)
+
+f_generate_supplement_tables_old <- function(
+    df,
+    group_col,
+    id_cols,
+    table_prefix = "Table S"
+) {
+
+  # ---------------------------
+  # Validation
+  # ---------------------------
+  if (!group_col %in% names(df)) {
+    stop(sprintf("Column '%s' not found in dataframe.", group_col))
+  }
+
+  # Split dataframe by grouping column
+  split_data <- split(df, df[[group_col]])
+
+  # ---------------------------
+  # Build tables
+  # ---------------------------
+  tables_list <- lapply(names(split_data), function(group_name) {
+
+    sub_df <- split_data[[group_name]]
+
+    # ------------------------------------------------
+    # Remove columns that are entirely NA
+    # ------------------------------------------------
+    useful_cols <- names(sub_df)[
+      colSums(is.na(sub_df)) < nrow(sub_df)
+    ]
+
+    sub_df <- sub_df[, useful_cols, drop = FALSE]
+
+    # ------------------------------------------------
+    # Move identifier columns to the front
+    # ------------------------------------------------
+    existing_ids <- intersect(id_cols, names(sub_df))
+
+    sub_df <- sub_df %>%
+      dplyr::select(dplyr::all_of(existing_ids), dplyr::everything())
+
+    # ------------------------------------------------
+    # Merge Macro_F1 columns if present
+    # ------------------------------------------------
+    macro_cols <- grep("^Macro_F1", names(sub_df), value = TRUE)
+
+    if (length(macro_cols) >= 3) {
+
+      sub_df <- sub_df %>%
+        dplyr::mutate(
+          Macro_F1 = paste0(
+            round(as.numeric(.data[[macro_cols[1]]]), 3),
+            " (",
+            round(as.numeric(.data[[macro_cols[2]]]), 3),
+            "-",
+            round(as.numeric(.data[[macro_cols[3]]]), 3),
+            ")"
+          )
+        ) %>%
+        dplyr::select(
+          -dplyr::all_of(macro_cols),
+          dplyr::everything(),
+          Macro_F1
+        )
+    }
+
+    # ------------------------------------------------
+    # Pretty column labels
+    # ------------------------------------------------
+    names(sub_df) <- gsub("_", " ", names(sub_df))
+
+    # ------------------------------------------------
+    # Create gt table
+    # ------------------------------------------------
+    gt_table <- sub_df %>%
+      gt::gt() %>%
+      gt::tab_header(
+        title = paste(table_prefix, ":", group_name),
+        subtitle = "Performance metrics stratified by class and level"
+      ) %>%
+      gt::fmt_number(
+        columns = where(is.numeric),
+        decimals = 3
+      ) %>%
+      gt::tab_options(
+        table.font.size = gt::px(14),
+        table.width = gt::pct(100),
+        column_labels.border.top.color = "black",
+        column_labels.border.bottom.color = "black"
+      )
+
+    # ------------------------------------------------
+    # Bold Macro F1 column if it exists
+    # ------------------------------------------------
+    if ("Macro F1" %in% names(sub_df)) {
+
+      gt_table <- gt_table %>%
+        gt::tab_style(
+          style = gt::cell_text(weight = "bold"),
+          locations = gt::cells_body(
+            columns = "Macro F1"
+          )
+        )
+    }
+
+    gt_table
+  })
+
+  names(tables_list) <- names(split_data)
+
+  return(tables_list)
+}
+
+
+f_generate_supplement_tables <- function(
+    df,
+    table_prefix = "Table S"
+) {
+
+  tables_list <- list()
+
+  # ==================================================
+  # TABLE S1: DISTURBANCE DETECTION
+  # ==================================================
+
+  df_bin <- df %>%
+    dplyr::filter(class == "disturbed/undisturbed") %>%
+    dplyr::select(
+      lvl,
+      summary_disturbed,
+      summary_undisturbed,
+      Precision,
+      Recall,
+      F1,
+      Overall_accuracy
+    ) %>%
+    dplyr::rename(
+      Level = lvl,
+      Disturbed = summary_disturbed,
+      Undisturbed = summary_undisturbed,
+      Accuracy = Overall_accuracy
+    )
+
+  tables_list$disturbance_detection <-
+    df_bin %>%
+    gt::gt() %>%
+    gt::tab_header(
+      title = paste0(table_prefix, "1. Disturbance Detection"),
+      subtitle = "Binary classification of disturbed versus undisturbed"
+    ) %>%
+    gt::fmt_percent(
+      columns = c(
+        Precision,
+        Recall,
+        F1,
+        Accuracy
+      ),
+      decimals = 1
+    )
+
+  # ==================================================
+  # TABLE S2: SEVERITY ESTIMATION
+  # ==================================================
+
+  df_reg <- df %>%
+    dplyr::filter(
+      !is.na(MAE) |
+      !is.na(RMSE) |
+      !is.na(ME)
+    ) %>%
+    dplyr::select(
+      lvl,
+      ME,
+      ME_sd,
+      MAE,
+      RMSE,
+      MAPE
+    ) %>%
+    dplyr::rename(
+      Level = lvl,
+      `Bias (ME)` = ME,
+      `Bias SD` = ME_sd
+    )
+
+  tables_list$severity_regression <-
+    df_reg %>%
+    gt::gt() %>%
+    gt::tab_header(
+      title = paste0(table_prefix, "2. Severity Estimation"),
+      subtitle = "Regression performance for disturbance severity (0-100)"
+    ) %>%
+    gt::fmt_number(
+      columns = where(is.numeric),
+      decimals = 2
+    )
+
+# ==================================================
+# TABLE S3: MULTICLASS CLASSIFICATION
+# ==================================================
+
+multiclass_levels <- c(
+  "Reassembly",
+  "Replacement",
+  "Restructuring",
+  "Resilience"
+)
+
+# ------------------------------------------
+# Class-specific rows
+# ------------------------------------------
+
+df_multi <- df %>%
+  dplyr::filter(class %in% multiclass_levels) %>%
+  dplyr::mutate(
+    F1 = dplyr::if_else(
+      is.nan(F1),
+      NA_real_,
+      F1
+    )
+  ) %>%
+  dplyr::transmute(
+    Level = lvl,
+    Class = class,
+    N = summary,
+    Precision = Precision,
+    Recall = Recall,
+    F1 = ifelse(
+      is.na(F1),
+      NA_character_,
+      sprintf("%.3f", F1)
+    ),
+    `Balanced Accuracy` = `Balanced Accuracy`
+  )
+
+# ------------------------------------------
+# Macro F1 summary rows
+# ------------------------------------------
+
+macro_rows <- df %>%
+  dplyr::filter(!is.na(Macro_F1)) %>%
+  dplyr::transmute(
+    Level = lvl,
+    Class = "Macro F1",
+    N = "",
+    Precision = NA_real_,
+    Recall = NA_real_,
+    F1 = sprintf(
+      "%.3f (%.3f-%.3f)",
+      Macro_F1,
+      Macro_F1_low,
+      Macro_F1_high
+    ),
+    `Balanced Accuracy` = NA_real_
+  )
+
+# ------------------------------------------
+# Combine
+# ------------------------------------------
+
+df_multi <- dplyr::bind_rows(
+  df_multi,
+  macro_rows
+)
+
+# ------------------------------------------
+# Force row order
+# ------------------------------------------
+
+df_multi <- df_multi %>%
+  dplyr::mutate(
+    Class = factor(
+      Class,
+      levels = c(
+        "Reassembly",
+        "Replacement",
+        "Restructuring",
+        "Resilience",
+        "Macro F1"
+      )
+    )
+  ) %>%
+  dplyr::arrange(
+    Level,
+    Class
+  )
+
+# ------------------------------------------
+# Generate table
+# ------------------------------------------
+
+tables_list$multiclass_classification <-
+  df_multi %>%
+  gt::gt(
+    groupname_col = "Level"
+  ) %>%
+  gt::tab_header(
+    title = paste0(
+      table_prefix,
+      "3. Disturbance Type Classification"
+    ),
+    subtitle =
+      "Multiclass classification of disturbance pathways"
+  ) %>%
+  gt::fmt_percent(
+    columns = c(
+      Precision,
+      Recall,
+      `Balanced Accuracy`
+    ),
+    decimals = 1
+  ) %>%
+  gt::sub_missing(
+    columns = everything(),
+    missing_text = ""
+  ) %>%
+  gt::tab_style(
+    style = gt::cell_text(weight = "bold"),
+    locations = gt::cells_body(
+      rows = Class == "Macro F1"
+    )
+  )
+
+  return(tables_list)
+}
+
+
+f_add15prct_to_oos <- function(dataset, part_test = 0.835, oos_set) {
+  # part_test = 0.835 -> because when wanting 15% from a original set but when the dataset
+  # only consists of 90% of the original data, the values changes!
+  # Create a group_id to later split dataset according to group
+  tmp <- dataset %>%
+    group_by(trip_n, manag, sub_plt) %>%
+    mutate(group_id = cur_group_id()) %>%
+    ungroup()
+  
+  unique_groups <- unique(tmp$group_id)
+
+  # Split unique group_id into train and test
+  set.seed(123) # reproductability
+  grp_split <- sample(unique(unique_groups))
+  split_point <- floor(part_test * length(unique(unique_groups)))
+  
+  train_groups <- grp_split[1:split_point]
+  test_groups <- grp_split[(split_point + 1):length(unique_groups)]
+  
+  # Assign rows to training or test set, based on group_id
+  train_set <- tmp %>%
+    filter(group_id %in% train_groups) %>% 
+    select(-group_id)
+
+  test_set <- tmp %>% 
+    filter(group_id %in% test_groups) %>% 
+    select(-group_id)
+  
+  test_set <- bind_rows(test_set, oos_set)
+
+  return(list(train_set, test_set))
+}
+
+f_split_dataset <- function(
+    dataset,
+    train_fraction = 0.75,
+    additional_test = NULL
+) {
+
+  tmp <- dataset %>%
+    group_by(trip_n, manag, sub_plt) %>%
+    mutate(group_id = cur_group_id()) %>%
+    ungroup()
+
+  unique_groups <- unique(tmp$group_id)
+
+  set.seed(123)
+
+  grp_split <- sample(unique_groups)
+
+  split_point <- floor(
+    train_fraction * length(unique_groups)
+  )
+
+  train_groups <- grp_split[1:split_point]
+
+  test_groups <- grp_split[
+    (split_point + 1):length(unique_groups)
+  ]
+
+  train_set <- tmp %>%
+    filter(group_id %in% train_groups) %>%
+    select(-group_id)
+
+  test_set <- tmp %>%
+    filter(!group_id %in% train_groups) %>%
+    select(-group_id)
+
+  if (!is.null(additional_test)) {
+
+    test_set <- bind_rows(
+      test_set,
+      additional_test
+    )
+  }
+
+  return(
+    list(
+      train = train_set,
+      test = test_set
+    )
+  )
+}
+
+# ============================================================
+# DATASET GENERATORS
+# ============================================================
+
+f_dataset_imglabels <- function() {
+
+  f_load_and_combine(
+    img_feat = FALSE
+  )
+
+}
+
+f_dataset_imgfeatures <- function() {
+
+  f_load_and_combine(
+    img_feat = TRUE
+  ) |>
+    group_by(
+      trip_n,
+      species,
+      manag,
+      sub_plt
+    ) |>
+    summarise(
+      R_direction = first(R_direction),
+      across(where(is.numeric), mean),
+      .groups = "drop"
+    )
+
+}

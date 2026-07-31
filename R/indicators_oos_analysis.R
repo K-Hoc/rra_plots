@@ -13,27 +13,29 @@ source("support_functions.R")
 # -------------- DATA PREPARATION ----------------
 df <- f_load_and_combine(img_feat = FALSE)
 
-# 4th gather out of sample test set
+# Gather out of sample test set
 df_oos <- df %>% filter(
   trip_n == 3 | trip_n == 26 | trip_n == 47 | trip_n == 64
 )
-df <- df %>% filter(
-  trip_n != 3 & trip_n != 26 & trip_n != 47 & trip_n != 64
-)
-
-df_oos_agg <- df_oos %>%
-  select(-sub_plt) %>%
-  group_by(trip_n, manag, species) %>%
+# Create patch level dataset
+df_agg <- df |> 
+  select(-sub_plt) |> 
+  group_by(trip_n, manag, species) |> 
   dplyr::summarise(
     R_direction = first(R_direction),
     across(where(is.numeric), mean),
     .groups = "drop"
   )
-  # %>% left_join(
-  #  x = .,
-  #  y = dfField %>% select(trip_n, manag, R_direction),
-  #  by = join_by(trip_n, manag)
-  #)
+
+# Plot level without oos
+df <- df %>% filter(
+  trip_n != 3 & trip_n != 26 & trip_n != 47 & trip_n != 64
+)
+
+# Add 15% of data to oos set
+tmp <- f_add15prct_to_oos(dataset = df, oos_set = df_oos)
+df <- tmp[[1]] # Train set
+df_oos <- tmp[[2]] # Test set
 
 # -------------- Q1: disturbance detection ----------------
 # Categorize whether a subplot is disturbed or undisturbed
@@ -51,9 +53,9 @@ df$disturbed <- as.factor(
     no = "undisturbed"
   )
 )
-df_oos_agg$disturbed <- as.factor(
+df_agg$disturbed <- as.factor(
   ifelse(
-    test = df_oos_agg$manag != "living",
+    test = df_agg$manag != "living",
     yes = "disturbed",
     no = "undisturbed"
   )
@@ -73,9 +75,21 @@ q1_conf <- confusionMatrix(df_oos$pred_dist, df_oos$disturbed)
 q1_conf$byClass
 
 ### PATCH LEVEL
-df_oos_agg$pred_dist <- as.factor(predict(mQ1, df_oos_agg))
-q1_conf_agg <- confusionMatrix(df_oos_agg$pred_dist, df_oos_agg$disturbed)
+df_agg$pred_dist <- as.factor(predict(mQ1, df_agg))
+q1_conf_agg <- confusionMatrix(df_agg$pred_dist, df_agg$disturbed)
 q1_conf_agg$byClass
+
+### Create table
+tbl_2_oos <- bind_rows(
+  as.tibble(t(q1_conf$byClass)) |>
+    mutate(Dataset = "Plot level test set"),
+  as.tibble(t(q1_conf_agg$byClass)) |>
+    mutate(Dataset = "Patch level test set")
+) |>
+  rename(Accuracy = `Balanced Accuracy`) |> 
+  select(Dataset, Precision, Recall, Accuracy, F1)
+tbl_2_oos
+write_csv(tbl_2_oos, file = "output/tbl2_oos.csv")
 
 # -------------- Q2: disturbance severity estimation ----------------
 set.seed(161)
@@ -106,10 +120,10 @@ Q2_metrics
 
 
 ### PATCH LEVEL
-df_oos_agg$pred_sev <- as.numeric(predict(mQ2, df_oos_agg))
-df_oos_agg$sev_err <- df_oos_agg$pred_sev - df_oos_agg$severity
+df_agg$pred_sev <- as.numeric(predict(mQ2, df_agg))
+df_agg$sev_err <- df_agg$pred_sev - df_agg$severity
 
-Q2_metrics_agg <- df_oos_agg %>% na.omit() %>% 
+Q2_metrics_agg <- df_agg %>% na.omit() %>% 
   filter(complete.cases(sev_err)) %>% 
   summarise(
     ME = mean(sev_err),
@@ -131,14 +145,27 @@ mQ3 <- caret::train(
 )
 ### PLOT LEVEL
 df_oos$R_dir_pred <- as.factor(predict(mQ3, df_oos))
-
 q3_conf <- confusionMatrix(df_oos$R_dir_pred, df_oos$R_direction, mode = "prec_recall")
 q3_conf$byClass
+q3_plt_macro_f1_stats <- f_calculate_macro_f1_boot(
+  data = df_oos,
+  truth_col = "R_direction",
+  pred_col = "R_dir_pred",
+  iterations = 1000
+)
+q3_plt_macro_f1_stats
 
 ### PATCH LEVEL
-df_oos_agg$R_dir_pred <- as.factor(predict(mQ3, df_oos_agg))
-q3_conf_agg <- confusionMatrix(df_oos_agg$R_dir_pred, df_oos_agg$R_direction, mode = "prec_recall")
+df_agg$R_dir_pred <- as.factor(predict(mQ3, df_agg))
+q3_conf_agg <- confusionMatrix(df_agg$R_dir_pred, df_agg$R_direction, mode = "prec_recall")
 q3_conf_agg$byClass
+q3_ptch_macro_f1_stats <- f_calculate_macro_f1_boot(
+  data = df_agg,
+  truth_col = "R_direction",
+  pred_col = "R_dir_pred",
+  iterations = 1000
+)
+q3_ptch_macro_f1_stats
 
 f_Q3plot <- function(df) {
   ggplot(
@@ -187,7 +214,7 @@ f_Q3plot <- function(df) {
 }
 
 p_oosplt <- f_Q3plot(df_oos)
-p_oosplt_agg <- f_Q3plot(df_oos_agg)
+p_oosplt_agg <- f_Q3plot(df_agg)
 
 (p_oosplt / p_oosplt_agg) +
   plot_annotation(tag_levels = "a") +
@@ -263,11 +290,19 @@ df_q1
 df_q2
 df_q3
 
-write_csv(
+df_tbl <- bind_rows(
+  df_q1_metr |> mutate(class = "disturbed/undisturbed", q = "q1", src = "img labels"),
+  df_q3_mert |> mutate(src = "img labels"),
+  df_q2 |> mutate(class = "severity")
+) |> 
   bind_rows(
-    df_q1_metr |> mutate(class = "disturbed/undisturbed", q = "q1", src = "img labels"),
-    df_q3_mert |> mutate(src = "img labels"),
-    df_q2 |> mutate(class = "severity")
-  ),
+    q3_plt_macro_f1_stats |> mutate(lvl = "plot", q = "q3", src = "img labels"),
+    q3_ptch_macro_f1_stats |> mutate(lvl = "patch", q = "q3", src = "img labels")
+  )
+
+write_csv(
+  df_tbl,
   file = "output/metr_summ_ooslabs.csv"
 )
+
+df_tbl

@@ -58,7 +58,8 @@ library(patchwork)
 if (.Platform$OS.type == "windows") {
   strWDpath <- "E:/Paper_1/2_work/"
 } else {
-  strWDpath <- "/home/khochholzer/NAS/Paper_1/2_work/"
+  #strWDpath <- "/home/khochholzer/edfm/private/Paper_1/2_work"
+  strWDpath <- "/mnt/private/Paper_1/2_work"
 }
 strWDpath <- normalizePath(strWDpath)
 
@@ -66,11 +67,13 @@ source("R/support_functions.R")
 
 # Set path to DNN model directory
 strCoDNNPath <- normalizePath(
-  path = get_newest_directory(file.path(strWDpath, "output/complexity/xception")),
+  #path = get_newest_directory(file.path(strWDpath, "output/complexity/xception")),
+  path = get_newest_directory("output/complexity/xception"),
   winslash = "/"
 )
 strGcDNNPath <- normalizePath(
-  path = get_newest_directory(file.path(strWDpath, "output/groundcover/xception")),
+  #path = get_newest_directory(file.path(strWDpath, "output/groundcover/xception")),
+  path = get_newest_directory("output/groundcover/xception"),
   winslash = "/"
 )
 
@@ -168,7 +171,7 @@ levels(dfGC_og_agg$manag) <- c("cleared","dead","living")
 
 
 ###### Load & process PREDICTION data ######
-setwd(file.path(strWDpath, "output"))
+#setwd(file.path(strWDpath, "output"))
 
 dfGC <- read.csv(
   file = file.path(strGcDNNPath, "predictions.csv"),
@@ -180,7 +183,7 @@ dfCO <- read.csv(
   sep = ",",
   dec = "."
 )
-setwd(strWDpath)
+#setwd(strWDpath)
 
 ## process
 # extract the file name from the image path
