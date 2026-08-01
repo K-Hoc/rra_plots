@@ -4,11 +4,11 @@ library(ggpubr)
 library(paletteer)
 
 # ============================================================
-# LOAD ANALYSES
+# LOAD ANALYSES ##############################################
 # ============================================================
 
 analysis_files <- list.files(
-  "output/analyses",
+  path = "/mnt/private/Paper_1/2_work/R/output/analyses",
   pattern = "\\.rds$",
   full.names = TRUE
 )
@@ -22,7 +22,7 @@ analyses <- analysis_files |>
   map(readRDS)
 
 # ============================================================
-# USER SETTINGS
+# USER SETTINGS ##############################################
 # ============================================================
 
 analysis_name <- "labels_random_meanpatch" #"labels_oos_meanpatch"
@@ -37,11 +37,11 @@ dir.create(
 )
 
 # ============================================================
-# FIGURE 3 - Observed vs Predicted Severity
+# FIGURE 3 - Observed vs Predicted Severity ##################
 # ============================================================
 
-df_fig3 <- res$predictions$plot |> filter(manag != "living")
-df_fig3_patch <- res$predictions$patch |> filter(manag != "living")
+df_fig3 <- res$predictions$plot |> dplyr::filter(manag != "living")
+df_fig3_patch <- res$predictions$patch |> dplyr::filter(manag != "living")
 
 p_plot <- ggplot(
   df_fig3,
@@ -118,9 +118,11 @@ ggsave(
     "Figure3_severity.pdf"
   ),
   plot = fig3,
+  scale = 3,
   width = 90,
   height = 45,
-  units = "mm"
+  units = "mm",
+  dpi = 300
 )
 
 ggsave(
@@ -131,6 +133,7 @@ ggsave(
     "Figure3_severity.tiff"
   ),
   plot = fig3,
+  scale = 3,
   width = 90,
   height = 45,
   units = "mm",
@@ -138,7 +141,7 @@ ggsave(
 )
 
 # ============================================================
-# FIGURE 4 - Reorganization Pathway
+# FIGURE 4 - Reorganization Pathway ##########################
 # ============================================================
 
 df4plt <- res$predictions$plot |>
@@ -242,6 +245,7 @@ ggsave(
     "Figure4_pathway.pdf"
   ),
   fig4,
+  scale = 3,
   width = 90,
   height = 90,
   units = "mm"
@@ -255,6 +259,7 @@ ggsave(
     "Figure4_pathway.tiff"
   ),
   fig4,
+  scale = 3,
   width = 90,
   height = 90,
   units = "mm",
@@ -264,7 +269,7 @@ ggsave(
 ##############################################################################
 ##############################################################################
 ##############################################################################
-# Comparison figures
+# Comparison figures #########################################################
 
 # ============================================================
 # COLLECT ALL METRICS
@@ -311,6 +316,10 @@ ggplot(
     fill = "Level"
   )
 
+ggsave(
+  filename = "output/figures/q1_comparison.pdf"
+)
+
 # Comparison 2 - severity estimation
 q2_comparison <- all_metrics |>
   filter(
@@ -335,6 +344,10 @@ ggplot(
     x = "",
     fill = "Level"
   )
+
+ggsave(
+  filename = "output/figures/q2_comparison.pdf"
+)
 
 # Comparison 3 - Pathway classification
 q3_comparison <- all_metrics |>
@@ -368,6 +381,10 @@ ggplot(
     fill = "Analysis"
   )
 
+ggsave(
+  filename = "output/figures/q3_comparison.pdf"
+)
+
 # Macro F1
 macro_f1 <- all_metrics |>
   filter(
@@ -400,8 +417,11 @@ ggplot(
     colour = "Level"
   )
 
+ggsave(filename = "output/figures/q3_comparison_macrof1.pdf")
+
+##############################################################
 # ============================================================
-# Table 2 - creation
+# Table 2 - creation #########################################
 # ============================================================
 library(flextable)
 library(officer)

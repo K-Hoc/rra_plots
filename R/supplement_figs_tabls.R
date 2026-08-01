@@ -1,3 +1,6 @@
+##### THIS FILE IS DEPRECATED #####
+
+
 # Supplement figures script ####
 # Creation of supplemental figures and tables
 library(tidyverse)

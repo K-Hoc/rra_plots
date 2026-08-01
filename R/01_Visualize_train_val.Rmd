@@ -13,41 +13,42 @@ First set the working directory. Then load all the .csv files into data frames.
 if (.Platform$OS.type == "windows") {
   strWDpath <- "E:/Paper_1/2_work"
 } else {
-  strWDpath <- "/home/khochholzer/NAS/Paper_1/2_work"
+  #strWDpath <- "/home/khochholzer/edfm/Paper_1/2_work/R"
+  strWDpath <- "/mnt/private/Paper_1/2_work"
 }
 strWDpath <- normalizePath(path = strWDpath, winslash = "/")
 
 # working directory only applies during this code chunk!
-source("support_functions.R")
+source(file.path(strWDpath,"R/support_functions.R"))
 
 ### Complexity ###
 # ConvNext
-l_cphist_cnB <- read.csv(file.path(get_newest_directory("../output/complexity/convnext_base"), "history.csv"), sep = ",", dec = ".")
-l_cphist_cnL <- read.csv(file.path(get_newest_directory("../output/complexity/convnext_large"), "history.csv"), sep = ",", dec = ".")
-l_cphist_cnS <- read.csv(file.path(get_newest_directory("../output/complexity/convnext_small"), "history.csv"), sep = ",", dec = ".")
-l_cphist_cnT <- read.csv(file.path(get_newest_directory("../output/complexity/convnext_tiny"), "history.csv"), sep = ",", dec = ".")
-l_cphist_cnXL <- read.csv(file.path(get_newest_directory("../output/complexity/convnext_xlarge"), "history.csv"), sep = ",", dec = ".")
+l_cphist_cnB <- read.csv(file.path(get_newest_directory("output/complexity/convnext_base"), "history.csv"), sep = ",", dec = ".")
+l_cphist_cnL <- read.csv(file.path(get_newest_directory("output/complexity/convnext_large"), "history.csv"), sep = ",", dec = ".")
+l_cphist_cnS <- read.csv(file.path(get_newest_directory("output/complexity/convnext_small"), "history.csv"), sep = ",", dec = ".")
+l_cphist_cnT <- read.csv(file.path(get_newest_directory("output/complexity/convnext_tiny"), "history.csv"), sep = ",", dec = ".")
+l_cphist_cnXL <- read.csv(file.path(get_newest_directory("output/complexity/convnext_xlarge"), "history.csv"), sep = ",", dec = ".")
 
 # EfficientNet
-l_cphist_B0 <- read.csv(file.path(get_newest_directory("../output/complexity/efficientnetb0"), "history.csv"), sep = ",", dec = ".")
-l_cphist_B2 <- read.csv(file.path(get_newest_directory("../output/complexity/efficientnetb2"), "history.csv"), sep = ",", dec = ".")
-l_cphist_B4 <- read.csv(file.path(get_newest_directory("../output/complexity/efficientnetb4"), "history.csv"), sep = ",", dec = ".")
-l_cphist_B5 <- read.csv(file.path(get_newest_directory("../output/complexity/efficientnetb5"), "history.csv"), sep = ",", dec = ".")
+l_cphist_B0 <- read.csv(file.path(get_newest_directory("output/complexity/efficientnetb0"), "history.csv"), sep = ",", dec = ".")
+l_cphist_B2 <- read.csv(file.path(get_newest_directory("output/complexity/efficientnetb2"), "history.csv"), sep = ",", dec = ".")
+l_cphist_B4 <- read.csv(file.path(get_newest_directory("output/complexity/efficientnetb4"), "history.csv"), sep = ",", dec = ".")
+l_cphist_B5 <- read.csv(file.path(get_newest_directory("output/complexity/efficientnetb5"), "history.csv"), sep = ",", dec = ".")
 # Xception
-l_cphist_XC <- read.csv(file.path(get_newest_directory("../output/complexity/xception"), "history.csv"), sep = ",", dec = ".")
+l_cphist_XC <- read.csv(file.path(get_newest_directory("output/complexity/xception"), "history.csv"), sep = ",", dec = ".")
 
 # Groundcover
-l_gchist_cnB <- read.csv(file.path(get_newest_directory("../output/groundcover/convnext_base"), "history.csv"), sep = ",", dec = ".")
-l_gchist_cnL <- read.csv(file.path(get_newest_directory("../output/groundcover/convnext_large"), "history.csv"), sep = ",", dec = ".")
-l_gchist_cnS <- read.csv(file.path(get_newest_directory("../output/groundcover/convnext_small"), "history.csv"), sep = ",", dec = ".")
-l_gchist_cnT <- read.csv(file.path(get_newest_directory("../output/groundcover/convnext_tiny"), "history.csv"), sep = ",", dec = ".")
-l_gchist_cnXL <- read.csv(file.path(get_newest_directory("../output/groundcover/convnext_xlarge"), "history.csv"), sep = ",", dec = ".")
+l_gchist_cnB <- read.csv(file.path(get_newest_directory("output/groundcover/convnext_base"), "history.csv"), sep = ",", dec = ".")
+l_gchist_cnL <- read.csv(file.path(get_newest_directory("output/groundcover/convnext_large"), "history.csv"), sep = ",", dec = ".")
+l_gchist_cnS <- read.csv(file.path(get_newest_directory("output/groundcover/convnext_small"), "history.csv"), sep = ",", dec = ".")
+l_gchist_cnT <- read.csv(file.path(get_newest_directory("output/groundcover/convnext_tiny"), "history.csv"), sep = ",", dec = ".")
+l_gchist_cnXL <- read.csv(file.path(get_newest_directory("output/groundcover/convnext_xlarge"), "history.csv"), sep = ",", dec = ".")
 
-l_gchist_B0 <- read.csv(file.path(get_newest_directory("../output/groundcover/efficientnetb0"), "history.csv"), sep = ",", dec = ".")
-l_gchist_B2 <- read.csv(file.path(get_newest_directory("../output/groundcover/efficientnetb2"), "history.csv"), sep = ",", dec = ".")
-l_gchist_B4 <- read.csv(file.path(get_newest_directory("../output/groundcover/efficientnetb4"), "history.csv"), sep = ",", dec = ".")
-l_gchist_B5 <- read.csv(file.path(get_newest_directory("../output/groundcover/efficientnetb5"), "history.csv"), sep = ",", dec = ".")
-l_gchist_XC <- read.csv(file.path(get_newest_directory("../output/groundcover/xception"), "history.csv"), sep = ",", dec = ".")
+l_gchist_B0 <- read.csv(file.path(get_newest_directory("output/groundcover/efficientnetb0"), "history.csv"), sep = ",", dec = ".")
+l_gchist_B2 <- read.csv(file.path(get_newest_directory("output/groundcover/efficientnetb2"), "history.csv"), sep = ",", dec = ".")
+l_gchist_B4 <- read.csv(file.path(get_newest_directory("output/groundcover/efficientnetb4"), "history.csv"), sep = ",", dec = ".")
+l_gchist_B5 <- read.csv(file.path(get_newest_directory("output/groundcover/efficientnetb5"), "history.csv"), sep = ",", dec = ".")
+l_gchist_XC <- read.csv(file.path(get_newest_directory("output/groundcover/xception"), "history.csv"), sep = ",", dec = ".")
 ```
 
 # Plot graphs stored in history files
@@ -406,16 +407,16 @@ ft <- fit_to_width(ft, max_width = 6.5) # for Word file
 ## 10 fold cross-val report
 Groundcover --
 ```{r}
-cv_cnt <- read_csv(file = file.path(get_newest_directory("../output/groundcover/convnext_tiny"), "cross_val_res.csv"))
-cv_cns <- read_csv(file = file.path(get_newest_directory("../output/groundcover/convnext_small"), "cross_val_res.csv"))
-cv_cnb <- read_csv(file = file.path(get_newest_directory("../output/groundcover/convnext_base"), "cross_val_res.csv"))
-cv_cnl <- read_csv(file = file.path(get_newest_directory("../output/groundcover/convnext_large"), "cross_val_res.csv"))
-cv_cnxl <- read_csv(file = file.path(get_newest_directory("../output/groundcover/convnext_xlarge"), "cross_val_res.csv"))
-cv_xc <- read_csv(file = file.path(get_newest_directory("../output/groundcover/xception"), "cross_val_res.csv"))
-cv_b0 <- read_csv(file = file.path(get_newest_directory("../output/groundcover/efficientnetb0"), "cross_val_res.csv"))
-cv_b2 <- read_csv(file = file.path(get_newest_directory("../output/groundcover/efficientnetb2"), "cross_val_res.csv"))
-cv_b4 <- read_csv(file = file.path(get_newest_directory("../output/groundcover/efficientnetb4"), "cross_val_res.csv"))
-cv_b5 <- read_csv(file = file.path(get_newest_directory("../output/groundcover/efficientnetb5"), "cross_val_res.csv"))
+cv_cnt <- read_csv(file = file.path(get_newest_directory("output/groundcover/convnext_tiny"), "cross_val_res.csv"))
+cv_cns <- read_csv(file = file.path(get_newest_directory("output/groundcover/convnext_small"), "cross_val_res.csv"))
+cv_cnb <- read_csv(file = file.path(get_newest_directory("output/groundcover/convnext_base"), "cross_val_res.csv"))
+cv_cnl <- read_csv(file = file.path(get_newest_directory("output/groundcover/convnext_large"), "cross_val_res.csv"))
+cv_cnxl <- read_csv(file = file.path(get_newest_directory("output/groundcover/convnext_xlarge"), "cross_val_res.csv"))
+cv_xc <- read_csv(file = file.path(get_newest_directory("output/groundcover/xception"), "cross_val_res.csv"))
+cv_b0 <- read_csv(file = file.path(get_newest_directory("output/groundcover/efficientnetb0"), "cross_val_res.csv"))
+cv_b2 <- read_csv(file = file.path(get_newest_directory("output/groundcover/efficientnetb2"), "cross_val_res.csv"))
+cv_b4 <- read_csv(file = file.path(get_newest_directory("output/groundcover/efficientnetb4"), "cross_val_res.csv"))
+cv_b5 <- read_csv(file = file.path(get_newest_directory("output/groundcover/efficientnetb5"), "cross_val_res.csv"))
 
 cv_cnt$model <- "ConvNeXtTiny"
 cv_cns$model <- "ConvNeXtSmall"
@@ -447,16 +448,16 @@ gc_cv
 ```
 Complexity --
 ```{r}
-cv_cnt <- read_csv(file = file.path(get_newest_directory("../output/complexity/convnext_tiny"), "cross_val_res.csv"))
-cv_cns <- read_csv(file = file.path(get_newest_directory("../output/complexity/convnext_small"), "cross_val_res.csv"))
-cv_cnb <- read_csv(file = file.path(get_newest_directory("../output/complexity/convnext_base"), "cross_val_res.csv"))
-cv_cnl <- read_csv(file = file.path(get_newest_directory("../output/complexity/convnext_large"), "cross_val_res.csv"))
-cv_cnxl <- read_csv(file = file.path(get_newest_directory("../output/complexity/convnext_xlarge"), "cross_val_res.csv"))
-cv_xc <- read_csv(file = file.path(get_newest_directory("../output/complexity/xception"), "cross_val_res.csv"))
-cv_b0 <- read_csv(file = file.path(get_newest_directory("../output/complexity/efficientnetb0"), "cross_val_res.csv"))
-cv_b2 <- read_csv(file = file.path(get_newest_directory("../output/complexity/efficientnetb2"), "cross_val_res.csv"))
-cv_b4 <- read_csv(file = file.path(get_newest_directory("../output/complexity/efficientnetb4"), "cross_val_res.csv"))
-cv_b5 <- read_csv(file = file.path(get_newest_directory("../output/complexity/efficientnetb5"), "cross_val_res.csv"))
+cv_cnt <- read_csv(file = file.path(get_newest_directory("output/complexity/convnext_tiny"), "cross_val_res.csv"))
+cv_cns <- read_csv(file = file.path(get_newest_directory("output/complexity/convnext_small"), "cross_val_res.csv"))
+cv_cnb <- read_csv(file = file.path(get_newest_directory("output/complexity/convnext_base"), "cross_val_res.csv"))
+cv_cnl <- read_csv(file = file.path(get_newest_directory("output/complexity/convnext_large"), "cross_val_res.csv"))
+cv_cnxl <- read_csv(file = file.path(get_newest_directory("output/complexity/convnext_xlarge"), "cross_val_res.csv"))
+cv_xc <- read_csv(file = file.path(get_newest_directory("output/complexity/xception"), "cross_val_res.csv"))
+cv_b0 <- read_csv(file = file.path(get_newest_directory("output/complexity/efficientnetb0"), "cross_val_res.csv"))
+cv_b2 <- read_csv(file = file.path(get_newest_directory("output/complexity/efficientnetb2"), "cross_val_res.csv"))
+cv_b4 <- read_csv(file = file.path(get_newest_directory("output/complexity/efficientnetb4"), "cross_val_res.csv"))
+cv_b5 <- read_csv(file = file.path(get_newest_directory("output/complexity/efficientnetb5"), "cross_val_res.csv"))
 
 cv_cnt$model <- "ConvNeXtTiny"
 cv_cns$model <- "ConvNeXtSmall"
@@ -486,7 +487,9 @@ co_cv <- bind_rows(
   select(-Fold)
 co_cv
 ```
+
 ### Table S3 creation
+
 ```{r}
 gc_cv$task <- "Groundcover estimation"
 co_cv$task <- "Complexity estimation"
@@ -505,7 +508,7 @@ cv_df <- cv_df %>% select(
   Accuracy = accuracy,
   RMSE
 )
-
+write_csv(cv_df, "output/TableS3_DNNs_10fold_results.csv")
 ft <- cv_df %>% 
   flextable() %>% 
   theme_booktabs() %>%
@@ -517,7 +520,7 @@ ft <- cv_df %>%
   flextable::bold(part = "header")
 ft
 ft <- fit_to_width(ft, max_width = 6.5) # for Word file
-save_as_docx(ft, path = "output/sup_tbl_crossval.docx")
+save_as_docx(ft, path = "output/TableS3_DNNs_10fold_results.docx")
 ```
 
 ## Test metrics (Table S2)
@@ -618,7 +621,7 @@ dftst <- dftst %>%
       "groundcover" = "Groundcover estimation"
     )
   )
-
+write_csv(dftst, "output/TableS2_DNNs_holdout_metrics.csv")
 
 ft <- dftst %>% 
   flextable() %>% 
@@ -626,13 +629,13 @@ ft <- dftst %>%
   flextable::color(i = seq(2, nrow(dftst), 2), color = "black", part = "body") %>%
   flextable::bg(i = seq(2, nrow(dftst), 2), bg = "#F9F9F9", part = "body") %>%
   flextable::align(align = "center", part = "all") %>%
-    flextable::hline(i = c(5,9,10,15,19)) %>%
+  flextable::hline(i = c(5,9,10,15,19)) %>%
   flextable::autofit() %>%
   flextable::bold(part = "header")
 
 ft <- fit_to_width(ft, max_width = 6.5)
 ft
-save_as_docx(ft, path = "output/sup_tbl_dnntst.docx")
+save_as_docx(ft, path = "output/TableS2_DNNs_holdout_metrics.docx")
 ```
 
 
