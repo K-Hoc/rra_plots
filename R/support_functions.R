@@ -481,14 +481,14 @@ f_generate_supplement_tables <- function(
       title = paste0(table_prefix, "1. Disturbance Detection"),
       subtitle = "Binary classification of disturbed versus undisturbed"
     ) %>%
-    gt::fmt_percent(
+    gt::fmt_number(
       columns = c(
         Precision,
         Recall,
         F1,
         Accuracy
       ),
-      decimals = 1
+      decimals = 3
     )
 
   # ==================================================
@@ -634,13 +634,13 @@ tables_list$multiclass_classification <-
     subtitle =
       "Multiclass classification of disturbance pathways"
   ) %>%
-  gt::fmt_percent(
+  gt::fmt_number(
     columns = c(
       Precision,
       Recall,
       `Balanced Accuracy`
     ),
-    decimals = 1
+    decimals = 3
   ) %>%
   gt::sub_missing(
     columns = everything(),
