@@ -34,11 +34,11 @@ f_script_dir <- function() {
   return(normalizePath(getwd()))
 }
 
-script_dir <- file.path(f_script_dir(), "R")
+script_dir <- f_script_dir()
 project_dir <- normalizePath(file.path(script_dir, ".."), mustWork = FALSE)
 paper_dir <- normalizePath(file.path(script_dir, "..", ".."), mustWork = FALSE)
 
-source(file.path(script_dir, "support_functions.R"))
+source("support_functions.R")
 
 f_assert_columns <- function(df, required_cols, df_name) {
   missing_cols <- setdiff(required_cols, colnames(df))
@@ -170,8 +170,8 @@ f_assert_columns(
 # TABLE S2&S3
 # ============================================================
 
-s2_tbl <- read_csv(file = "output/TableS2_DNNs_holdout_metrics.csv")
-s3_tbl <- read_csv(file = "output/TableS3_DNNs_10fold_results.csv")
+s2_tbl <- read_csv(file = "../output/TableS2_DNNs_holdout_metrics.csv")
+s3_tbl <- read_csv(file = "../output/TableS3_DNNs_10fold_results.csv")
 
 tbl_s2 <- s2_tbl |> 
   flextable() |> 

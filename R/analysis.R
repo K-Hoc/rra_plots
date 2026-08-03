@@ -7,7 +7,6 @@ source("analysis_engine.R")
 
 # CONFIG ####
 analysis_configs <- list(
-
   list(
     src = "labels_oos_meanpatch",
     dataset_fun = f_dataset_imglabels,
@@ -15,7 +14,6 @@ analysis_configs <- list(
     split_method = "oos",
     test_fraction = 0.25
   ),
-
   list(
     src = "imgfeat_oos_meanpatch",
     dataset_fun = f_dataset_imgfeatures,
@@ -23,7 +21,6 @@ analysis_configs <- list(
     split_method = "oos",
     test_fraction = 0.25
   ),
-
   list(
     src = "labels_oos_randompatch",
     dataset_fun = f_dataset_imglabels,
@@ -31,15 +28,20 @@ analysis_configs <- list(
     split_method = "oos",
     test_fraction = 0.25
   ),
-
   list(
     src = "labels_random_meanpatch",
     dataset_fun = f_dataset_imglabels,
     patch_method = "mean",
     split_method = "random",
     test_fraction = 0.25
+  ),
+  list(
+    src = "labels_oosonly_meanpatch",
+    dataset_fun = f_dataset_imglabels,
+    patch_method = "mean",
+    split_method = "oos",
+    test_fraction = 0.05
   )
-
 )
 
 # RUN ANALYSIS ####

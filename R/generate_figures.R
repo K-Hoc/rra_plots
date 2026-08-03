@@ -65,7 +65,9 @@ p_plot <- ggplot(
   ylim(0,100) +
   theme_pubr() +
   scale_color_paletteer_d(
-    "MetBrewer::Kandinsky"
+    "MetBrewer::Kandinsky",
+    name = "Species",
+    labels = c("Beech", "Oak", "Pine", "Spruce")
   ) +
   labs(
     title = "Plot level",
@@ -94,7 +96,9 @@ p_patch <- ggplot(
   ylim(0,100) +
   theme_pubr() +
   scale_color_paletteer_d(
-    "MetBrewer::Kandinsky"
+    "MetBrewer::Kandinsky",
+    name = "Species",
+    labels = c("Beech", "Oak", "Pine", "Spruce")
   ) +
   labs(
     title = "Patch level",
@@ -197,7 +201,15 @@ make_traj_plot <- function(df, title) {
     ) +
     facet_grid(
       ~species,
-      scales = "free_x"
+      scales = "free_x",
+      labeller = labeller(
+        species = c(
+          beech = "Beech",
+          oak = "Oak",
+          pine = "Pine",
+          spruce = "Spruce"
+        )
+      )
     ) +
     scale_fill_manual(
       values = trajectory_cols
@@ -214,7 +226,10 @@ make_traj_plot <- function(df, title) {
       y = "Proportion",
       fill = "Pathway"
     ) +
-    theme_pubr()
+    theme_pubr() +
+    theme(
+      axis.text.x = element_text(angle = 45, hjust = 1)
+    )
 }
 
 p1 <- make_traj_plot(

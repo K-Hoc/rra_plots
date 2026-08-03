@@ -113,24 +113,27 @@ f_prepare_data <- function(
       )
 
     oos_fraction <- nrow(df_oos) / nrow(df)
-    if (oos_fraction > test_fraction) {
-      stop(paste(
-        "OOS set is already larger than requested test_fraction.",
-        "Increase test_fraction or reduce OOS set."
-      ))
-    }
-
-    train_fraction_remaining <- (1 - test_fraction) / (1 - oos_fraction)
-    train_fraction_remaining <- min(
-        train_fraction_remaining,
-        1
+    message("oos_fraction: ", oos_fraction, " test_fraction: ", test_fraction)
+    if (oos_fraction >= test_fraction) {
+      message(
+        "OOS fraction (", round(oos_fraction, 3),
+        ") exceeds requested test_fraction (", test_fraction,
+        "). Using OOS data as the complete test set."
       )
-
-    split <- f_split_dataset(
-      dataset = df_remaining,
-      train_fraction = train_fraction_remaining,
-      additional_test = df_oos
-    )
+      split <- list(
+        train = df_remaining,
+        test = df_oos
+      )
+    } else {
+      train_fraction_remaining <- (1 - test_fraction) / (1 - oos_fraction)
+      train_fraction_remaining <- min(train_fraction_remaining, 1)
+      
+      split <- f_split_dataset(
+        dataset = df_remaining,
+        train_fraction = train_fraction_remaining,
+        additional_test = df_oos
+      )
+    }
   }
   if (split_method == "random") {
     split <- f_split_dataset(
