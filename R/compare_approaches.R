@@ -19,10 +19,12 @@
 # ============================================================
 
 library(tidyverse)
+library(patchwork)
 
 # ------------------------------------------------------------
 # LOAD ANALYSIS OBJECTS
 # ------------------------------------------------------------
+setwd("/mnt/private/Paper_1/2_work/R")
 
 files <- list.files(
   path = "output/analyses",
@@ -205,7 +207,6 @@ write_csv(
 ranking <- tibble(
 
   Approach = names(analyses),
-
   Q1_F1_Plot =
     map_dbl(
       analyses,
@@ -275,6 +276,17 @@ ranking <- tibble(
 
       }
     ),
+  Q3_MacroF1_SD_Plot = map_dbl(
+    analyses,
+    \(x) {
+      x$metrics$q3_macro_f1 |>
+        filter(lvl == "plot") |>
+        summarise(
+          sd = (Macro_F1_high - Macro_F1_low) / (2 * 1.96)
+        ) |>
+        pull(sd)
+    }
+  ),
 
   Q3_MacroF1_Patch =
     map_dbl(
@@ -288,7 +300,18 @@ ranking <- tibble(
           pull(Macro_F1)
 
       }
-    )
+    ),
+  Q3_MacroF1_SD_Patch = map_dbl(
+    analyses,
+    \(x) {
+      x$metrics$q3_macro_f1 |>
+        filter(lvl == "patch") |>
+        summarise(
+          sd = (Macro_F1_high - Macro_F1_low) / (2 * 1.96)
+        ) |>
+        pull(sd)
+    }
+  )
 
 )
 
@@ -387,6 +410,7 @@ p_q1 <- ggplot(
   q1_comp,
   aes(
     x = reorder(src, F1),
+    #y = Overall_accuracy,
     y = F1,
     fill = lvl
   )

@@ -25,6 +25,7 @@ analyses <- analysis_files |>
 # USER SETTINGS ##############################################
 # ============================================================
 
+setwd("/mnt/privat/Paper_1/2_work/R")
 analysis_name <- "labels_random_meanpatch" #"labels_oos_meanpatch"
 
 res <- analyses[[analysis_name]]
@@ -319,6 +320,7 @@ ggplot(
 ggsave(
   filename = "output/figures/q1_comparison.pdf"
 )
+ggsave(filename = "output/figures/q1_comparison.png")
 
 # Comparison 2 - severity estimation
 q2_comparison <- all_metrics |>
@@ -347,6 +349,9 @@ ggplot(
 
 ggsave(
   filename = "output/figures/q2_comparison.pdf"
+)
+ggsave(
+  filename = "output/figures/q2_comparison.png"
 )
 
 # Comparison 3 - Pathway classification
@@ -379,11 +384,16 @@ ggplot(
     x = "",
     y = "F1 Score",
     fill = "Analysis"
+  ) +
+  theme(
+    axis.text.x = element_text(angle = 45, hjust = 1),
+    legend.position = "right"
   )
 
 ggsave(
   filename = "output/figures/q3_comparison.pdf"
 )
+ggsave(filename = "output/figures/q3_comparison.png")
 
 # Macro F1
 macro_f1 <- all_metrics |>
@@ -418,6 +428,7 @@ ggplot(
   )
 
 ggsave(filename = "output/figures/q3_comparison_macrof1.pdf")
+ggsave(filename = "output/figures/q3_comparison_macrof1.png")
 
 ##############################################################
 # ============================================================

@@ -14,6 +14,7 @@ library(caret)
 # SETTINGS
 # ============================================================
 
+setwd("/mnt/private/Paper_1/2_work/R")
 analysis_name <- Sys.getenv("ANALYSIS_NAME", unset = "labels_random_meanpatch")
 save_png_preview <- TRUE
 

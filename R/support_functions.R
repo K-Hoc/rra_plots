@@ -323,6 +323,7 @@ f_calculate_macro_f1_boot <- function(data, truth_col, pred_col, iterations = 50
   # 4. Return a summary tibble
   return(tibble(
     Macro_F1 = mean(boot_f1_scores),
+    Macro_F1_sd = sd(boot_f1_scores),
     Macro_F1_low = quantile(boot_f1_scores, 0.025),
     Macro_F1_high = quantile(boot_f1_scores, 0.975)
   ))
