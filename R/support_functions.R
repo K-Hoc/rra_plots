@@ -706,10 +706,10 @@ f_split_dataset <- function(
 
   set.seed(123)
 
-  grp_split <- sample(unique_groups)
+  grp_split <- sample(unique(unique_groups))
 
   split_point <- floor(
-    train_fraction * length(unique_groups)
+    train_fraction * length(unique(unique_groups))
   )
 
   train_groups <- grp_split[1:split_point]

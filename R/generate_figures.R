@@ -313,7 +313,7 @@ q1_comparison <- all_metrics |>
     class == "disturbed/undisturbed"
   )
 
-ggplot(
+q1_plt <- ggplot(
   q1_comparison,
   aes(
     src,
@@ -343,7 +343,7 @@ q2_comparison <- all_metrics |>
     !is.na(MAE)
   )
 
-ggplot(
+q2_plt <- ggplot(
   q2_comparison,
   aes(
     src,
@@ -380,7 +380,7 @@ q3_comparison <- all_metrics |>
     )
   )
 
-ggplot(
+q3_plt1 <- ggplot(
   q3_comparison,
   aes(
     class,
@@ -416,7 +416,7 @@ macro_f1 <- all_metrics |>
     !is.na(Macro_F1)
   )
 
-ggplot(
+q3_mcr_plt <- ggplot(
   macro_f1,
   aes(
     src,
@@ -444,6 +444,18 @@ ggplot(
 
 ggsave(filename = "output/figures/q3_comparison_macrof1.pdf")
 ggsave(filename = "output/figures/q3_comparison_macrof1.png")
+
+write_csv(q1_comparison, file = "output/q1_comparison.csv")
+write_csv(q2_comparison, file = "output/q2_comparison.csv")
+write_csv(q3_comparison, file = "output/q3_comparison.csv")
+
+((q1_plt + q2_plt + q3_mcr_plt + plot_layout(guides = "collect", axes = "collect")) / q3_plt1) +
+  plot_annotation(tag_levels = "a")
+ggsave(
+  filename = "output/figures/comparison_combined.png",
+  width = 14,
+  height = 7
+)
 
 ##############################################################
 # ============================================================

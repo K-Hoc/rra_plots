@@ -2,6 +2,7 @@
 library(tidyverse)
 library(caret)
 library(yardstick)
+library(patchwork)
 
 setwd("~/edfm/private/Paper_1/2_work/R/")
 source("support_functions.R")
@@ -249,25 +250,58 @@ varimp_tbl <- results_tbl |>
 varimp_tbl
 
 # PLOTS ----
-ggplot(results_metrics |> filter(metric_type == "regression"),
+p1 <- ggplot(results_metrics |> filter(metric_type == "regression"),
        aes(x = outcome, y = RMSE, fill = model)) +
   geom_col(position = "dodge") +
   coord_flip() +
-  labs(title = "Regression model performance")
+  labs(title = "Regression (severity)") +
+  theme_bw() +
+  scale_fill_discrete(
+    name = "Variables used:",
+    labels = c("Both", "Ground cover", "Complexity")
+  ) +
+  xlab("Regression task") +
+  scale_x_discrete(labels = c("Disturbance\nseverity"))
 
-ggplot(results_metrics |> filter(metric_type == "classification"),
+p2 <- ggplot(results_metrics |> filter(metric_type == "classification"),
        aes(x = outcome, y = Accuracy, fill = model)) +
   geom_col(position = "dodge") +
   coord_flip() +
-  labs(title = "Classification model performance")
+  labs(title = "Classifications") +
+  theme_bw() +
+  xlab("Classification task") +
+  scale_fill_discrete(
+    name = "Variables used:",
+    labels = c("Both", "Ground cover", "Complexity")
+  ) +
+  scale_x_discrete(labels = c("Disturbance\ndetection", "Development\npathway"))
+
+p1 + p2 +
+  plot_annotation(tag_levels = "a") +
+  plot_layout(guides = "collect") &
+  theme(legend.position = "bottom")
+ggsave(filename = "output/imglab_sensitivity.png")
 
 ggplot(varimp_tbl,
        aes(x = reorder(variable, Overall), y = Overall)) +
   geom_col() +
   coord_flip() +
-  facet_grid(outcome ~ model, scales = "free") +
-  labs(title = "Variable importance")
-
+  facet_grid(
+    outcome ~ model,
+    scales = "free",
+    labeller = labeller(
+      outcome = c(
+        disturbed = "Dist. detection",
+        R_direction = "Dev. pathway",
+        severity = "Dist. severity"
+      ),
+      model = c(both = "Both", gc = "Ground cover", grad = "Complexity")
+    )
+  ) +
+  labs(title = "Variable importance") +
+  theme_bw() +
+  ylab("Overall importance")
+ggsave(filename = "output/imglab_sensitivity_varimp.png")
 
 # Prediction on out of sample ----
 evaluate_oos <- function(model, data, outcome) {
@@ -344,7 +378,8 @@ ggplot(results_oos |> filter(metric_type == "classification"),
        aes(x = outcome, y = Accuracy, fill = model)) +
   geom_col(position = "dodge") +
   coord_flip() +
-  labs(title = "OOS Classification performance")
+  labs(title = "OOS Classification performance") +
+  theme_bw()
 
 
 
