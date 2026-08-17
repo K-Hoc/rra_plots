@@ -58,8 +58,8 @@ library(patchwork)
 if (.Platform$OS.type == "windows") {
   strWDpath <- "E:/Paper_1/2_work/"
 } else {
-  #strWDpath <- "/home/khochholzer/edfm/private/Paper_1/2_work"
-  strWDpath <- "/mnt/private/Paper_1/2_work"
+  strWDpath <- "/home/khochholzer/edfm/private/Paper_1/2_work"
+  #strWDpath <- "/mnt/private/Paper_1/2_work"
 }
 strWDpath <- normalizePath(strWDpath)
 
@@ -761,6 +761,11 @@ nrow(test_set) # Amount of data points ##310
 nrow(test_set[test_set$disturbed == test_set$prd_cls_v,]) # Amt. corr classific.
 ##231
 
+q1_confMtr_plt <- confusionMatrix(
+  test_set$prd_cls_v,
+  test_set$disturbed
+)
+q1_confMtr_plt
 
 ##### Plot level #####
 dfPrd_agg$disturbed <- ifelse(
@@ -772,6 +777,11 @@ dfPrd_agg$disturbed <- ifelse(
 dfPrd_agg$prd_cls_v <- predict(mDist_v, dfPrd_agg)
 nrow(dfPrd_agg[dfPrd_agg$disturbed == dfPrd_agg$prd_cls_v,]) / nrow(dfPrd_agg) #86%
 dfPrd_agg$disturbed <- as.factor(dfPrd_agg$disturbed)
+
+q1_confMtr_pth <- confusionMatrix(
+  dfPrd_agg$prd_cls_v,
+  dfPrd_agg$disturbed
+)
 
 #summary(dfPrd_agg)
 cat(
@@ -810,6 +820,7 @@ dflvlsit <- dfPrd_agg
 ## 2.2 Calculating F1-Score
 
 ```{r}
+
 f_calcPrecRecF1 <- function(TruePositive, FalsePositive, FalseNegative, TrueNegative) {
   n <- TruePositive + FalsePositive + FalseNegative + TrueNegative
   r_precision <- TruePositive / (TruePositive + FalsePositive)
@@ -938,7 +949,7 @@ ft <- tbl2_mngmnt %>%
 ft <- fit_to_width(ft, max_width = 6.5)
 ft
 
-save_as_docx(ft, path = "output/tbl2_mngmnt.docx")
+#save_as_docx(ft, path = "output/tbl2_mngmnt.docx")
 ```
 
 # 3. Disturbance severity (Q2)
@@ -954,6 +965,22 @@ f_MAE <- function(p_errorSet) {
   }
   r_MAE <- l_sum / l_n
   return(r_MAE)
+}
+
+f_regression_metrics <- function(df) {
+  df |>
+    filter(
+      complete.cases(sev_err)
+    ) |>
+    summarise(
+      ME = mean(sev_err),
+      ME_sd = sd(sev_err),
+      MAE = mean(abs(sev_err)),
+      RMSE = sqrt(mean(sev_err^2)),
+      MAPE = mean(
+        abs(sev_err / severity)
+      ) * 100
+    )
 }
 ```
 
@@ -1018,7 +1045,7 @@ test_set$prd_sev <- predict(mSevFT, test_set)
 test_set$sev_err <- test_set$prd_sev - test_set$severity
 
 # Save to file
-write_csv(x = test_set, file = "output/data_fig3.csv")
+#write_csv(x = test_set, file = "output/data_fig3.csv")
 
 dfsev_patch <- dfSev %>% 
   group_by(triplet, species, manag) %>% 
@@ -1031,7 +1058,12 @@ dfsev_patch$prd_sev <- predict(mSevFT, dfsev_patch)
 dfsev_patch$sev_err <- dfsev_patch$prd_sev - dfsev_patch$severity
 
 # Save to file
-write_csv(x = dfsev_patch, file = "output/data_fig3_patch.csv")
+#write_csv(x = dfsev_patch, file = "output/data_fig3_patch.csv")
+
+q2_metric_plot <- f_regression_metrics(test_set)
+q2_metric_patc <- f_regression_metrics(dfsev_patch)
+q2_metric_plot
+q2_metric_patc
 ```
 
 ## Plot Figure 4
@@ -1112,7 +1144,7 @@ p2_patch <- ggplot(
 Clean the environment:
 
 ```{r}
-rm(tmp, test_set, train_set, mDist_v)
+rm(tmp, test_set, train_set)
 ```
 
 # 4. Post-disturbance development (Q3)
@@ -1256,6 +1288,15 @@ nrow(tmp_test[tmp_test$R_direction == tmp_test$PrdTrd,]) / nrow(tmp_test) #~84%
 # predict dev tradj with other data
 dfNewDat$PrdTrd <- f_predict(mRF, dfNewDat %>% select(-R_direction)) #, -PrdTrd))
 nrow(dfNewDat[dfNewDat$R_direction == dfNewDat$PrdTrd,]) / nrow(dfNewDat)#~87.5%
+
+q3_confMtr_plot <- confusionMatrix(
+  tmp_test$PrdTrd,
+  tmp_test$R_direction
+)
+q3_confMtr_patch <- confusionMatrix(
+  dfNewDat$PrdTrd,
+  dfNewDat$R_direction
+)
 ```
 
 ### confusion Matrix (Table 2)
@@ -1283,13 +1324,47 @@ dfF1 <- dfF1 %>% add_row(
   set = "aggregat",
   task = "development"
 )
-write_csv(x = dfF1, file = "output/table2.csv")
+#write_csv(x = dfF1, file = "output/table2.csv")
 dfF1
 
 levels(tmp_test$species) <- c("Beech", "Oak", "Pine", "Spruce")
 levels(dfNewDat$species) <- c("Beech", "Oak", "Pine", "Spruce")
-write_csv(x = tmp_test, file = "output/data_fig4_plot.csv")
-write_csv(x = dfNewDat, file = "output/data_fig4_patch.csv")
+#write_csv(x = tmp_test, file = "output/data_fig4_plot.csv")
+#write_csv(x = dfNewDat, file = "output/data_fig4_patch.csv")
+
+dftbl2 <- dfF1 |> 
+  mutate(
+    task = if_else(
+      condition = (task == "dist_detect"),
+      true = "A: Disturbance detection",
+      false = "B: Classifying reorganization pathway"
+    ),
+    set = if_else(
+      condition = (set == "test_set"),
+      true = "Plot level",
+      false = "Patch level"
+    ),
+    class = if_else(
+      condition = (class == "disturbed"),
+      true = "Disturbed / undisturbed",
+      false = class
+    ),
+    class = str_remove(class, "^Class:\\s*"),
+    across(where(is.numeric), ~round(.x, 3))
+  ) |> 
+  select(Task = task, Dataset = set, Response = class, Precision, Recall, `F1-Score` = F1, Accuracy)
+
+ft_tbl2 <- dftbl2 |> 
+  flextable() |> 
+  theme_booktabs() |> 
+  flextable::color(i = seq(2, nrow(dftbl2), 2), color = "black", part = "body") |> 
+  flextable::bg(i = seq(2, nrow(dftbl2), 2), bg = "#F9F9F9", part = "body") |> 
+  flextable::hline(i = c(2,6,10)) |> 
+  flextable::align(align = "center", part = "all") |> 
+  flextable::autofit() |> 
+  flextable::bold(part = "header")
+ft_tbl2 <- flextable::fit_to_width(ft_tbl2, max_width = 6.5)
+#flextable::save_as_docx(ft_tbl2, path = "output/tbl2.docx")
 ```
 
 #### Matrix w. management (Table S4)
@@ -1360,7 +1435,7 @@ ft <- tbl2_tmp %>%
   flextable::bold(part = "header")
 ft
 ft <- fit_to_width(ft, max_width = 6.5)
-flextable::save_as_docx(ft, path = "output/tbl2_mngmnt.docx")
+#flextable::save_as_docx(ft, path = "output/tblS4_tbl2mngmnt.docx")
 ```
 
 ### Summaries - Plot lvl
@@ -1385,6 +1460,14 @@ tmp_test %>%
   summarise(pct_true = mean(TrdMatch) * 100)
 ```
 
+True development predictions at plot level (accuracy)
+- Beech 78.9%
+- Oak 56.2%
+- Pine 88.9%
+- Spruce 91.6%
+
+overall 83.5%
+
 ### Summaries - Patch lvl
 
 ```{r}
@@ -1406,6 +1489,38 @@ dfNewDat %>%
   select(2, 3, TrdMatch) %>% 
   summarise(pct_true = mean(TrdMatch) * 100)
 ```
+
+True development predictions at patch level (accuracy)
+- Beech 88.5%
+- Oak 90%
+- Pine 100%
+- Spruce 85.3%
+
+overall 88.8%
+
+```{r}
+q1_confMtr_plt
+q1_confMtr_pth
+
+q2_metric_plot
+q2_metric_patc
+mSevFT
+
+q3_confMtr_plot
+q3_confMtr_patch
+```
+
+Accuracy q1:
+- plot 73.3 %
+- patch 84.2 %
+
+RMSE q2:
+- plot 28.5
+- patch 22.0
+
+Overall accuracy q3:
+- plot 83.5 %
+- patch 88.8 %
 
 # Cleanup
 

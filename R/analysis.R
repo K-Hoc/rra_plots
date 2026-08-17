@@ -22,11 +22,45 @@ analysis_configs <- list(
     test_fraction = 0.25
   ),
   list(
-    src = "labels_oos_randompatch",
+    src = "imgfeat_random_meanpatch",
+    dataset_fun = f_dataset_imgfeatures,
+    patch_method = "mean",
+    split_method = "random",
+    test_fraction = 0.25
+  ),
+  list(
+    src = "labels_oos_randompatch_I",
     dataset_fun = f_dataset_imglabels,
     patch_method = "random_plot",
     split_method = "oos",
     test_fraction = 0.25
+  ),
+  list(
+    src = "labels_oos_randompatch_II",
+    dataset_fun = f_dataset_imglabels,
+    patch_method = "random_plot",
+    split_method = "oos",
+    test_fraction = 0.25,
+    model_seed = 161,
+    split_seed = 420
+  ),
+  list(
+    src = "labels_oos_randompatch_III",
+    dataset_fun = f_dataset_imglabels,
+    patch_method = "random_plot",
+    split_method = "oos",
+    test_fraction = 0.25,
+    model_seed = 161,
+    split_seed = 1312
+  ),
+  list(
+    src = "labels_oos_randompatch_IV",
+    dataset_fun = f_dataset_imglabels,
+    patch_method = "random_plot",
+    split_method = "oos",
+    test_fraction = 0.25,
+    model_seed = 161,
+    split_seed = 42
   ),
   list(
     src = "labels_random_meanpatch",
@@ -53,7 +87,9 @@ analyses <- purrr::map(
       src = cfg$src,
       patch_method = cfg$patch_method,
       split_method = cfg$split_method,
-      test_fraction = cfg$test_fraction
+      test_fraction = cfg$test_fraction,
+      model_seed = cfg$model_seed,
+      split_seed = cfg$split_seed
     )
 
   }

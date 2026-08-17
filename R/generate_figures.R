@@ -8,7 +8,8 @@ library(paletteer)
 # ============================================================
 
 analysis_files <- list.files(
-  path = "/mnt/private/Paper_1/2_work/R/output/analyses",
+  #path = "/mnt/private/Paper_1/2_work/R/output/analyses",
+  path = "~/edfm/private/Paper_1/2_work/R/output/analyses/",
   pattern = "\\.rds$",
   full.names = TRUE
 )
@@ -307,6 +308,30 @@ all_metrics <- bind_rows(
   )
 )
 
+# Calculate mean for random_plot case
+all_metrics <- bind_rows(
+  all_metrics |>
+    mutate(
+      src = if_else(
+        condition = src %in% c(
+          "labels_oos_randompatch_I","labels_oos_randompatch_II",
+          "labels_oos_randompatch_III","labels_oos_randompatch_IV"
+        ),
+        true = "labels_oos_randompatch",
+        false = src
+      )
+    ) |>
+    filter(patch_method == "random_plot") |> 
+    group_by(q, lvl, class, src, split_method, patch_method) |> 
+    summarise(
+      across(where(is.numeric), ~mean(.x, na.rm = FALSE)),
+      .groups = "drop"
+    ),
+
+  all_metrics |> 
+    filter(patch_method != "random_plot")
+)
+
 # Comparison 1 - Disturbance detection
 q1_comparison <- all_metrics |>
   filter(
@@ -448,6 +473,7 @@ ggsave(filename = "output/figures/q3_comparison_macrof1.png")
 write_csv(q1_comparison, file = "output/q1_comparison.csv")
 write_csv(q2_comparison, file = "output/q2_comparison.csv")
 write_csv(q3_comparison, file = "output/q3_comparison.csv")
+write_csv(macro_f1, file = "output/q3_comp_macrF1.csv")
 
 ((q1_plt + q2_plt + q3_mcr_plt + plot_layout(guides = "collect", axes = "collect")) / q3_plt1) +
   plot_annotation(tag_levels = "a")
@@ -522,13 +548,13 @@ df_table2 <- res$metrics$summary |>
 # Create flextable
 ft <- df_table2 |>
   flextable() |>
-  theme_booktabs() |>
-  color(i = seq(2, nrow(df_table2), 2), color = "black", part = "body") |> 
-  bg(i = seq(2, nrow(df_table2), 2), bg = "#F9F9F9", part = "body") |> 
-  hline(i = c(1,2,6)) |> 
-  align(align = "center",part = "all") |>
-  bold(part = "header") |>
-  autofit()
+  flextable::theme_booktabs() |>
+  flextable::color(i = seq(2, nrow(df_table2), 2), color = "black", part = "body") |> 
+  flextable::bg(i = seq(2, nrow(df_table2), 2), bg = "#F9F9F9", part = "body") |> 
+  flextable::hline(i = c(1,2,6)) |> 
+  flextable::align(align = "center",part = "all") |>
+  flextable::bold(part = "header") |>
+  flextable::autofit()
 ft
 
 ft <- fit_to_width(ft, max_width = 6.5)

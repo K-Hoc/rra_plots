@@ -39,7 +39,8 @@ f_dataset_imgfeatures <- function() {
 
 f_create_patch_dataset <- function(
     df,
-    method = "mean"
+    method = "mean",
+    split_seed = 161
 ) {
 
   if (method == "mean") {
@@ -66,7 +67,7 @@ f_create_patch_dataset <- function(
 
   if (method == "random_plot") {
 
-    set.seed(161)
+    set.seed(split_seed)
 
     return(
       df |>
@@ -94,11 +95,13 @@ f_prepare_data <- function(
     patch_method = "mean",
     split_method = "oos",
     test_fraction = 0.25,
-    oos_ids = c(3, 26, 47, 64)
+    oos_ids = c(3, 26, 47, 64),
+    split_seed = 123
 ) {
   df_patch <- f_create_patch_dataset(
     df,
-    method = patch_method
+    method = patch_method,
+    split_seed = split_seed
   )
 
   if (split_method == "oos") {
@@ -131,14 +134,18 @@ f_prepare_data <- function(
       split <- f_split_dataset(
         dataset = df_remaining,
         train_fraction = train_fraction_remaining,
-        additional_test = df_oos
+        additional_test = df_oos,
+        split_seed = split_seed
       )
     }
   }
   if (split_method == "random") {
+    message("Test fraction = ", test_fraction)
+    message("\n train_fraction = ", (1 - test_fraction))
     split <- f_split_dataset(
       dataset = df,
-      train_fraction = (1 - test_fraction)
+      train_fraction = (1 - test_fraction),
+      split_seed = split_seed
     )
   }
 
@@ -168,6 +175,37 @@ f_add_disturbance <- function(df) {
       )
     )
 
+}
+
+# ============================================================
+# Adding reference features
+# ============================================================
+
+f_add_reference_features <- function(df) {
+
+  ref_df <- df |> 
+    filter(manag == "living") |> 
+    group_by(trip_n, species) |> 
+    summarise(
+      across(where(is.numeric), mean, na.rm = TRUE),
+      .groups = "drop"
+    ) |> 
+    select(
+      #trip_n, species, starts_with("g")
+      -severity
+    )
+  
+  return_df <- left_join(
+    x = df,
+    y = ref_df,
+    by = c("trip_n", "species"),
+    suffix = c("", "_ref")
+  )
+
+  message("nrow - df:\n", nrow(df))
+  message("nrow - ref:\n", nrow(ref_df))
+
+  return(return_df)
 }
 
 # ============================================================
@@ -201,26 +239,44 @@ f_run_analysis <- function(
     src,
     patch_method = "mean",
     split_method = "oos",
-    test_fraction = 0.25
+    test_fraction = 0.25,
+    model_seed = 161,
+    split_seed = 123
 ) {
   message("Running analysis: ", src)
 
+  # Q1 splits
   splits <- f_prepare_data(
     df = dataset,
     patch_method = patch_method,
     split_method = split_method,
-    test_fraction = test_fraction
+    test_fraction = test_fraction,
+    split_seed = split_seed
   )
 
   df <- f_add_disturbance(splits$train)
   df_oos <- f_add_disturbance(splits$test)
   df_patch <- f_add_disturbance(splits$patch)
 
+  # Q2 and Q3 -> adding reference columns
+  ref_data <- f_add_reference_features(dataset)
+  splits_ref <- f_prepare_data(
+    df = ref_data,
+    patch_method = patch_method,
+    split_method = split_method,
+    test_fraction = test_fraction,
+    split_seed = split_seed
+  )
+
+  df_ref <- f_add_disturbance(splits_ref$train)
+  df_oos_ref <- f_add_disturbance(splits_ref$test)
+  df_patch_ref <- f_add_disturbance(splits_ref$patch)
+
   # ==========================================================
   # Q1
   # ==========================================================
 
-  set.seed(161)
+  set.seed(model_seed)
 
   mQ1 <- caret::train(
     disturbed ~ .,
@@ -241,28 +297,55 @@ f_run_analysis <- function(
     )
   )
 
-  df_oos$pred_dist <- predict(mQ1, df_oos)
-  df_patch$pred_dist <- predict(mQ1, df_patch)
+  message("train data used for Q1: \n")
+  message(str(
+    df |>
+      select(
+        -trip_n,
+        -manag,
+        -sub_plt,
+        -species,
+        -R_direction,
+        -severity
+      )
+  ))
+
+  df_oos_ref$pred_dist <- predict(mQ1, df_oos_ref)
+  df_patch_ref$pred_dist <- predict(mQ1, df_patch_ref)
 
   q1_conf <- confusionMatrix(
-    df_oos$pred_dist,
-    df_oos$disturbed
+    df_oos_ref$pred_dist,
+    df_oos_ref$disturbed
   )
 
   q1_conf_agg <- confusionMatrix(
-    df_patch$pred_dist,
-    df_patch$disturbed
+    df_patch_ref$pred_dist,
+    df_patch_ref$disturbed
   )
 
   # ==========================================================
   # Q2
   # ==========================================================
 
-  set.seed(161)
+  message("train data used for Q2: \n")
+  message(str(
+    df_ref |>
+      filter(!is.na(severity)) |>
+      select(
+        -trip_n,
+        -manag,
+        -sub_plt,
+        -species,
+        -R_direction,
+        -disturbed
+      )
+  ))
+
+  set.seed(model_seed)
 
   mQ2 <- caret::train(
     severity ~ .,
-    data = df |>
+    data = df_ref |>
       filter(!is.na(severity)) |>
       select(
         -trip_n,
@@ -280,30 +363,45 @@ f_run_analysis <- function(
     )
   )
 
-  df_oos$pred_sev <- predict(mQ2, df_oos)
-  df_patch$pred_sev <- predict(mQ2, df_patch)
+  df_oos_ref$pred_sev <- predict(mQ2, df_oos_ref)
+  df_patch_ref$pred_sev <- predict(mQ2, df_patch_ref)
 
-  df_oos$sev_err <- df_oos$pred_sev - df_oos$severity
-  df_patch$sev_err <- df_patch$pred_sev - df_patch$severity
+  df_oos_ref$sev_err <- df_oos_ref$pred_sev - df_oos_ref$severity
+  df_patch_ref$sev_err <- df_patch_ref$pred_sev - df_patch_ref$severity
 
-  Q2_metrics <- f_regression_metrics(df_oos)
-  Q2_metrics_agg <- f_regression_metrics(df_patch)
+  Q2_metrics <- f_regression_metrics(df_oos_ref)
+  Q2_metrics_agg <- f_regression_metrics(df_patch_ref)
 
   # ==========================================================
   # Q3
   # ==========================================================
 
-  set.seed(161)
-
-  mQ3 <- caret::train(
-    R_direction ~ .,
-    data = df |>
+  message("train data used for Q3: \n")
+  message(str(
+    df_ref |>
       select(
         -trip_n,
         -manag,
         -sub_plt,
         -species,
-        -severity
+        -severity,
+        -disturbed
+      ) |>
+      na.omit()
+  ))
+
+  set.seed(model_seed)
+
+  mQ3 <- caret::train(
+    R_direction ~ .,
+    data = df_ref |>
+      select(
+        -trip_n,
+        -manag,
+        -sub_plt,
+        -species,
+        -severity,
+        -disturbed
       ) |>
       na.omit(),
     method = "rf",
@@ -314,32 +412,30 @@ f_run_analysis <- function(
     )
   )
 
-  df_oos$R_dir_pred <- predict(mQ3, df_oos)
-  df_patch$R_dir_pred <- predict(mQ3, df_patch)
+  df_oos_ref$R_dir_pred <- predict(mQ3, df_oos_ref)
+  df_patch_ref$R_dir_pred <- predict(mQ3, df_patch_ref)
 
   q3_conf <- confusionMatrix(
-    df_oos$R_dir_pred,
-    df_oos$R_direction,
+    df_oos_ref$R_dir_pred,
+    df_oos_ref$R_direction,
     mode = "prec_recall"
   )
 
   q3_conf_agg <- confusionMatrix(
-    df_patch$R_dir_pred,
-    df_patch$R_direction,
+    df_patch_ref$R_dir_pred,
+    df_patch_ref$R_direction,
     mode = "prec_recall"
   )
 
-  q3_plt_macro_f1_stats <-
-    f_calculate_macro_f1_boot(
-      data = df_oos,
+  q3_plt_macro_f1_stats <- f_calculate_macro_f1_boot(
+      data = df_oos_ref,
       truth_col = "R_direction",
       pred_col = "R_dir_pred",
       iterations = 1000
     )
 
-  q3_ptch_macro_f1_stats <-
-    f_calculate_macro_f1_boot(
-      data = df_patch,
+  q3_ptch_macro_f1_stats <- f_calculate_macro_f1_boot(
+      data = df_patch_ref,
       truth_col = "R_direction",
       pred_col = "R_dir_pred",
       iterations = 1000
@@ -425,7 +521,8 @@ f_run_analysis <- function(
         n_plot_test = nrow(df_oos),
         n_patch_test = nrow(df_patch),
         oos_ids = if (split_method == "oos") c(3,26,47,64) else NULL,
-        seed = 161,
+        model_seed = model_seed,
+        split_seed = split_seed,
         run_date = Sys.time(),
         formulas = list(
           q1 = disturbed ~ .,
@@ -448,8 +545,8 @@ f_run_analysis <- function(
       ),
 
       predictions = list(
-        plot = df_oos,
-        patch = df_patch
+        plot = df_oos_ref,
+        patch = df_patch_ref
       ),
 
       models = list(

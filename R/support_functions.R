@@ -694,7 +694,8 @@ f_add15prct_to_oos <- function(dataset, part_test = 0.835, oos_set) {
 f_split_dataset <- function(
     dataset,
     train_fraction = 0.75,
-    additional_test = NULL
+    additional_test = NULL,
+    split_seed = 123
 ) {
 
   tmp <- dataset %>%
@@ -704,26 +705,23 @@ f_split_dataset <- function(
 
   unique_groups <- unique(tmp$group_id)
 
-  set.seed(123)
+  set.seed(split_seed)
 
   grp_split <- sample(unique(unique_groups))
-
   split_point <- floor(
     train_fraction * length(unique(unique_groups))
   )
 
   train_groups <- grp_split[1:split_point]
-
   test_groups <- grp_split[
     (split_point + 1):length(unique_groups)
   ]
 
-  train_set <- tmp %>%
-    filter(group_id %in% train_groups) %>%
+  train_set <- tmp |> 
+    filter(group_id %in% train_groups) |> 
     select(-group_id)
-
-  test_set <- tmp %>%
-    filter(!group_id %in% train_groups) %>%
+  test_set <- tmp |> 
+    filter(!group_id %in% train_groups) |> 
     select(-group_id)
 
   if (!is.null(additional_test)) {

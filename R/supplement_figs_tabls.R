@@ -78,6 +78,14 @@ ggsave(
   dpi = 500
 )
 ggsave(
+  filename = "output/FigureS2.png",
+  scale = 4,
+  width = 45,
+  height = 45,
+  units = "mm",
+  dpi = 500
+)
+ggsave(
   filename = "output/FigureS2.pdf",
   scale = 4,
   width = 600,
@@ -178,6 +186,14 @@ p2 <- p2 + theme(legend.position = "none")
 
 ggsave(
   filename = "output/FigureS3.tiff",
+  scale = 5,
+  height = 45,
+  width = 45,
+  units = "mm",
+  dpi = 500
+)
+ggsave(
+  filename = "output/FigureS3.png",
   scale = 5,
   height = 45,
   width = 45,
