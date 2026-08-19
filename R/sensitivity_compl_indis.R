@@ -120,6 +120,22 @@ df <- left_join(
     gc_deadwood = `gc_deadwood/stumps`
   )
 
+df_ref <- df |> 
+  filter(manag == "living") |> 
+  group_by(trip_n, species) |> 
+  summarise(
+    across(where(is.numeric), mean, na.rm = TRUE),
+    .groups = "drop"
+  ) |> 
+  select(-severity)
+
+df <- left_join(
+  x = df,
+  y = df_ref,
+  by = join_by(trip_n, species),
+  suffix = c("","_ref")
+)
+
 # 4th gather out of sample test set
 df_oos <- df |> filter(
   trip_n == 3 | trip_n == 26 | trip_n == 47 | trip_n == 64
@@ -156,13 +172,46 @@ grad_indis <- c(
 y_vars <- c(
   "R_direction", "severity", "disturbed"
 )
+gc_ref <- c(
+  "gc_Mature_Trees_ref",
+  "gc_rejuvenation_ref",
+  "gc_shrub_layer_ref",
+  "gc_mosses_ref",
+  "gc_ferns_ref",
+  "gc_herb_layer_ref",
+  "gc_grasses_ref",
+  "gc_soil_ref",
+  "gc_rock_ref",
+  "gc_deadwood_ref"
+)
+grad_ref <- c(
+  "grade_stand_density_ref",
+  "grade_treespecies_ref",
+  "grade_shrubs_ref",
+  "grade_herbs_ref",
+  "grade_grass_ref",
+  "grade_moss_ref",
+  "grade_deadwood_ref",
+  "grade_layers_ref",
+  "grade_mixing_ref"
+)
 
 
-ctrl <- trainControl(method = "cv", number = 10)
+ctrl <- trainControl(method = "repeatedcv", number = 10, repeats = 3)
 run_models <- function(y_var) {
-  both_form <- as.formula(paste(y_var, "~", paste(c(gc_indis, grad_indis), collapse = " + ")))
-  gc_form <- as.formula(paste(y_var, "~", paste(gc_indis, collapse = " + ")))
-  grad_form <- as.formula(paste(y_var, "~", paste(grad_indis, collapse = " + ")))
+  if (y_var == "disturbed") {
+    both_form <- as.formula(paste(y_var, "~", paste(c(gc_indis, grad_indis), collapse = " + ")))
+    gc_form <- as.formula(paste(y_var, "~", paste(gc_indis, collapse = " + ")))
+    grad_form <- as.formula(paste(y_var, "~", paste(grad_indis, collapse = " + ")))
+  } else {
+    both_form <- as.formula(
+      paste(y_var, "~", paste(c(gc_indis, grad_indis, gc_ref, grad_ref), collapse = " + "))
+    )
+    gc_form <- as.formula(paste(y_var, "~", paste(c(gc_indis, gc_ref), collapse = " + ")))
+    grad_form <- as.formula(
+      paste(y_var, "~", paste(c(grad_indis, grad_ref), collapse = " + "))
+    )
+  }
 
   set.seed(161)
   mdl_both <- train(both_form, data = df, method = "rf", trControl = ctrl, na.action = na.omit)
@@ -301,7 +350,11 @@ ggplot(varimp_tbl,
   labs(title = "Variable importance") +
   theme_bw() +
   ylab("Overall importance")
-ggsave(filename = "output/imglab_sensitivity_varimp.png")
+ggsave(
+  filename = "output/imglab_sensitivity_varimp.png",
+  height = 9,
+  width = 6.67
+)
 
 # Prediction on out of sample ----
 evaluate_oos <- function(model, data, outcome) {

@@ -130,7 +130,7 @@ all_metrics <- bind_rows(
   lapply(
     analyses,
     \(x) {
-      x$metrics$summary %>%
+      x$metrics$summary |>
         mutate(
           src = x$metadata$src,
           split_method = x$metadata$split_method,

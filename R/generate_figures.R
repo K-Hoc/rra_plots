@@ -480,7 +480,7 @@ write_csv(macro_f1, file = "output/q3_comp_macrF1.csv")
 ggsave(
   filename = "output/figures/comparison_combined.png",
   width = 14,
-  height = 7
+  height = 9
 )
 
 ##############################################################

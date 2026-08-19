@@ -58,7 +58,7 @@ library(patchwork)
 if (.Platform$OS.type == "windows") {
   strWDpath <- "E:/Paper_1/2_work/"
 } else {
-  strWDpath <- "/home/khochholzer/edfm/private/Paper_1/2_work"
+  strWDpath <- "~/edfm/private/Paper_1/2_work"
   #strWDpath <- "/mnt/private/Paper_1/2_work"
 }
 strWDpath <- normalizePath(strWDpath)
@@ -68,12 +68,12 @@ source("R/support_functions.R")
 # Set path to DNN model directory
 strCoDNNPath <- normalizePath(
   #path = get_newest_directory(file.path(strWDpath, "output/complexity/xception")),
-  path = get_newest_directory("output/complexity/xception"),
+  path = get_newest_directory("./output/complexity/xception"),
   winslash = "/"
 )
 strGcDNNPath <- normalizePath(
   #path = get_newest_directory(file.path(strWDpath, "output/groundcover/xception")),
-  path = get_newest_directory("output/groundcover/xception"),
+  path = get_newest_directory("./output/groundcover/xception"),
   winslash = "/"
 )
 
@@ -751,10 +751,10 @@ mDist_v <- caret::train(
   disturbed ~ .,
   data = train_set %>% select(disturbed, starts_with("g")),
   method = "rf",
-  trControl = trainControl(method = "repeatedcv", number = 10, repeats = 3)
+  trControl = trainControl(method = "repeatedcv", number = 10, repeats = 3) #, classProbs = TRUE)
 )
 # Model based on all vars
-test_set$prd_cls_v <- predict(mDist_v, test_set)
+test_set$prd_cls_v <- predict(mDist_v, test_set) #, type = "prob")
 nrow(test_set[test_set$disturbed == test_set$prd_cls_v,]) / nrow(test_set) # 74%
 #summary(test_set)
 nrow(test_set) # Amount of data points ##310
@@ -992,29 +992,45 @@ dfSev <- left_join(
   x = dfSubPlts,
   y = l_dfFieldSev,
   by = join_by(triplet == trip_n, species == dom_sp, manag)
-) %>% na.omit()
+)# %>% na.omit()
 
-# Add reference columns from forest type to dataframe
+ref_df <- dfSev |> 
+  filter(manag == "living") |> 
+  group_by(triplet, species) |> 
+  summarise(
+    across(where(is.numeric), mean, na.rm = TRUE),
+    .groups = "drop"
+  ) |> 
+    select(-severity)
+
 dfSev <- left_join(
   x = dfSev,
-  y = left_join(
-    x = dfCO %>% 
-      group_by(species, manag) %>% 
-      select(-triplet, -sub_plt, -orient) %>% 
-      filter(manag == "living") %>% 
-      summarise(across(everything(), mean)) %>% 
-      ungroup(),
-    y = dfGC %>% 
-      group_by(species, manag) %>% 
-      select(-triplet, -sub_plt, -orient) %>% 
-      filter(manag == "living") %>% 
-      summarise(across(everything(), mean)) %>% 
-      ungroup(),
-    by = join_by(species, manag)
-  ) %>% select(-manag),
-  by = join_by(species),
+  y = ref_df,
+  by = join_by(triplet, species),
   suffix = c("", "_ref")
 )
+
+# Add reference columns from forest type to dataframe
+#dfSev <- left_join(
+#  x = dfSev,
+#  y = left_join(
+#    x = dfCO %>% 
+#      group_by(species, manag) %>% 
+#      select(-triplet, -sub_plt, -orient) %>% 
+#      filter(manag == "living") %>% 
+#      summarise(across(everything(), mean)) %>% 
+#      ungroup(),
+#    y = dfGC %>% 
+#      group_by(species, manag) %>% 
+#      select(-triplet, -sub_plt, -orient) %>% 
+#      filter(manag == "living") %>% 
+#      summarise(across(everything(), mean)) %>% 
+#      ungroup(),
+#    by = join_by(species, manag)
+#  ) %>% select(-manag),
+#  by = join_by(species),
+#  suffix = c("", "_ref")
+#)
 ```
 
 Create a model to predict the disturbance severity.
@@ -1045,7 +1061,7 @@ test_set$prd_sev <- predict(mSevFT, test_set)
 test_set$sev_err <- test_set$prd_sev - test_set$severity
 
 # Save to file
-#write_csv(x = test_set, file = "output/data_fig3.csv")
+write_csv(x = test_set, file = "output/data_fig3.csv")
 
 dfsev_patch <- dfSev %>% 
   group_by(triplet, species, manag) %>% 
@@ -1058,7 +1074,7 @@ dfsev_patch$prd_sev <- predict(mSevFT, dfsev_patch)
 dfsev_patch$sev_err <- dfsev_patch$prd_sev - dfsev_patch$severity
 
 # Save to file
-#write_csv(x = dfsev_patch, file = "output/data_fig3_patch.csv")
+write_csv(x = dfsev_patch, file = "output/data_fig3_patch.csv")
 
 q2_metric_plot <- f_regression_metrics(test_set)
 q2_metric_patc <- f_regression_metrics(dfsev_patch)
@@ -1324,13 +1340,13 @@ dfF1 <- dfF1 %>% add_row(
   set = "aggregat",
   task = "development"
 )
-#write_csv(x = dfF1, file = "output/table2.csv")
+write_csv(x = dfF1, file = "output/table2.csv")
 dfF1
 
 levels(tmp_test$species) <- c("Beech", "Oak", "Pine", "Spruce")
 levels(dfNewDat$species) <- c("Beech", "Oak", "Pine", "Spruce")
-#write_csv(x = tmp_test, file = "output/data_fig4_plot.csv")
-#write_csv(x = dfNewDat, file = "output/data_fig4_patch.csv")
+write_csv(x = tmp_test, file = "output/data_fig4_plot.csv")
+write_csv(x = dfNewDat, file = "output/data_fig4_patch.csv")
 
 dftbl2 <- dfF1 |> 
   mutate(
@@ -1515,8 +1531,9 @@ Accuracy q1:
 - patch 84.2 %
 
 RMSE q2:
-- plot 28.5
-- patch 22.0
+- plot --28.5-- 19.6
+- patch --22.0-- 12.4
+R²: 79.3 %
 
 Overall accuracy q3:
 - plot 83.5 %

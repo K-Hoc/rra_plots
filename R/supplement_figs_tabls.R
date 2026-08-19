@@ -1,6 +1,3 @@
-##### THIS FILE IS DEPRECATED #####
-
-
 # Supplement figures script ####
 # Creation of supplemental figures and tables
 library(tidyverse)
@@ -24,7 +21,7 @@ library(ggpubr)
 df_figS2 <- read_csv(file = "output/data_fig3.csv")
 
 df_figS2$manag <- as.factor(df_figS2$manag)
-df_figS2_patch <- read_csv(file = "output/data_fig3_patch.csv")
+df_figS2_patch <- read_csv(file = "output/data_fig3_patch.csv") |> filter(manag != "living")
 df_figS2_patch$manag <- as.factor(df_figS2_patch$manag)
 
 f_figS2_plot <- function(data, lvl) {
